@@ -1,0 +1,2374 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>幸福指数仪表板 - 上海区</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-manager.js"></script>
+  <style>
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glass-card {
+        transition: none;
+      }
+      .glass-card:hover {
+        transform: none;
+      }
+    }
+
+    /* Score Badge */
+    .score-badge {
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.75rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .score-a-plus {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: white;
+    }
+
+    .score-a {
+      background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      color: white;
+    }
+
+    .score-b-plus {
+      background: linear-gradient(135deg, #ca8a04 0%, #eab308 100%);
+      color: white;
+    }
+
+    .score-b {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+      color: white;
+    }
+
+    .score-c {
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+      color: white;
+    }
+
+    .score-d {
+      background: linear-gradient(135deg, #7c2d12 0%, #b45309 100%);
+      color: white;
+    }
+
+    /* District Card */
+    .district-card {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .district-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .district-card:hover::before {
+      left: 100%;
+    }
+
+    /* Filter Button */
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1.5px solid rgba(3, 102, 214, 0.2);
+      background: rgba(3, 102, 214, 0.05);
+      color: #1e40af;
+    }
+
+    .filter-chip:hover {
+      border-color: #0366d6;
+      background: rgba(3, 102, 214, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      color: white;
+      border-color: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    /* Metric Item */
+    .metric-box {
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(129, 212, 250, 0.05) 100%);
+      border-left: 3px solid #0284c7;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .metric-box:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(129, 212, 250, 0.1) 100%);
+      transform: translateX(2px);
+    }
+
+    .metric-label {
+      font-size: 0.8125rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-value {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Chart Container */
+    .chart-wrapper {
+      position: relative;
+      height: 320px;
+      margin-bottom: 1rem;
+    }
+
+    /* Rank Badge */
+    .rank-badge {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .rank-1 {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: white;
+    }
+
+    .rank-2 {
+      background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+      color: white;
+    }
+
+    .rank-3 {
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+      color: white;
+    }
+
+    .rank-other {
+      background: #e5e7eb;
+      color: #64748b;
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #0366d6 0%, #0284c7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Responsive Grid */
+    .grid-responsive {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .grid-responsive-lg {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Focus State */
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid #0284c7;
+      outline-offset: 2px;
+    }
+
+    /* Scrollbar Styling */
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Additional Styles from Shanghai Dashboard */
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(248, 250, 252, 1);
+      border-color: rgba(14, 165, 233, 0.5);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ranking-table thead th {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(2, 132, 199, 0.1));
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .ranking-table tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .ranking-table tbody tr:hover {
+      background: rgba(14, 165, 233, 0.05);
+    }
+
+    .rank-badge-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
+    .rank-badge-2 { background: linear-gradient(135deg, #c5cae9, #9fa8da); color: white; }
+    .rank-badge-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: white; }
+    .rank-badge-other { background: #e2e8f0; color: #64748b; }
+
+    .comparison-bar {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.1), rgba(14, 165, 233, 0.3));
+      border-radius: 0.5rem;
+      height: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comparison-fill {
+      background: linear-gradient(90deg, #0ea5e9, #0284c7);
+      height: 100%;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 0.5rem;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .dimension-tab {
+      background: rgba(248, 250, 252, 0.9);
+      color: #64748b;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .dimension-tab:hover {
+      border-color: rgba(14, 165, 233, 0.5);
+      background: rgba(248, 250, 252, 1);
+    }
+
+    .dimension-tab-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      border-color: transparent;
+    }
+
+    .dimension-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .dimension-content.hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Chart Styles */
+    .chart-card {
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(240, 249, 255, 0.95));
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #0ea5e9, #0284c7, #06b6d4);
+    }
+
+    .chart-card:hover {
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chart-title-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .chart-title-icon-blue {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.2));
+      color: #0284c7;
+    }
+
+    .chart-title-icon-green {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.2));
+      color: #15803d;
+    }
+
+    .chart-title-icon-purple {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(109, 40, 217, 0.2));
+      color: #6d28d9;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-card.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .chart-canvas-wrapper {
+      position: relative;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-stat-item {
+      text-align: center;
+    }
+
+    .chart-stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .chart-stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      font-weight: 500;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .chart-legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .tab-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      color: white;
+    }
+
+    .tab-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <button id="sidebarToggle" class="sidebar-toggle hidden-desktop">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="navbar-brand">
+      <img src="logo.png" alt="幸福生态平台" class="navbar-logo">
+      幸福生态平台
+    </div>
+    <nav class="navbar-nav">
+      <a href="index.html">首页</a>
+      <a href="happiness.html">评分逻辑</a>
+      <a href="shanghai-happiness-dashboard.html">上海区分析</a>
+      <a href="happiness-dashboard-new.html" class="active">片区分析</a>
+      <a href="happiness-shop-dashboard.html">营业店分析</a>
+      <button class="theme-toggle" aria-label="切换主题">🌙</button>
+    </nav>
+  </nav>
+
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item">
+        <a href="index.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          首页
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+          评分逻辑
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="shanghai-happiness-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path>
+            <path d="M7 8h10M7 13h5M7 18h3"></path>
+          </svg>
+          上海区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-dashboard-new.html" class="active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          片区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-shop-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6-7 6 7M9 5v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V5M9 9h6M9 13h6"></path>
+          </svg>
+          营业店分析
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 主容器 -->
+  <div class="main-wrapper">
+    <div class="container">
+    <!-- Section 1: District Overview -->
+    <section class="mb-16">
+      <div class="mb-8">
+        <h2 class="section-title">📊 片区幸福指数分析</h2>
+        <p class="text-slate-600 text-lg">显示各片区的综合幸福指数评分</p>
+      </div>
+
+      <!-- District Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">片区总数</div>
+          <div class="metric-value" id="districtCount">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">平均得分</div>
+          <div class="metric-value" id="districtAvgScore">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">最高得分</div>
+          <div class="metric-value text-green-600" id="districtMaxScore">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">最低得分</div>
+          <div class="metric-value text-red-600" id="districtMinScore">--</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Distribution Chart -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="text-lg font-bold mb-4 text-slate-900">得分分布</h3>
+          <div class="chart-wrapper">
+            <canvas id="districtDistributionChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Districts -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="text-lg font-bold mb-4 text-slate-900">Top 5 片区</h3>
+          <div id="topDistrictsList" class="space-y-3">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- All Districts Bar Chart -->
+      <div class="glass-card rounded-2xl p-6 mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">各片区详细分数</h3>
+        <div class="chart-wrapper" style="height: 400px;">
+          <canvas id="allDistrictsBarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- District Cards Slider -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">片区详细得分</h3>
+        <div class="relative">
+          <div class="overflow-y-auto h-[500px] pr-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" id="districtCardsSlider">
+            <div class="flex flex-col gap-4 pb-4" id="districtCardsContainer">
+              <!-- Generated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="border-t-2 border-gray-200 my-16"></div>
+
+    <!-- Section 2: Position Analysis -->
+    <section>
+      <div class="mb-8">
+        <h2 class="section-title">👥 重要岗位分析</h2>
+        <p class="text-slate-600 text-lg">按片区筛选查看各岗位幸福指数</p>
+      </div>
+
+      <!-- District Filter -->
+      <div class="glass-card rounded-2xl p-6 mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">筛选片区</h3>
+        <div class="flex flex-wrap gap-2" id="districtFilterContainer" role="group" aria-label="片区筛选">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- 四维度子维度详情 -->
+      <div class="glass-card rounded-2xl p-8 mb-8">
+        <h4 class="text-lg font-semibold text-slate-900 mb-6">四维度子维度详情</h4>
+
+        <!-- 维度选择标签 -->
+        <div class="flex flex-wrap gap-2 sm:gap-3 mb-8 pb-6 border-b border-slate-200">
+          <button
+            onclick="showDimensionTab('employee', this)"
+            class="dimension-tab dimension-tab-active py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300"
+            aria-label="员工满意度调研"
+          >
+            👥 员工满意度<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('process', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="过程管理"
+          >
+            📊 过程管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('voice', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="声音管理"
+          >
+            🎤 声音管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('fragment', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="碎片化调研"
+          >
+            🔍 碎片化调研<span class="text-xs ml-1">(权重10%)</span>
+          </button>
+        </div>
+
+        <!-- 员工满意度调研子维度 -->
+        <div id="employeeDimension" class="dimension-content">
+          <div class="dimension-grid" id="employeeDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 过程管理子维度 -->
+        <div id="processDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="processDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 声音管理子维度 -->
+        <div id="voiceDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="voiceDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 碎片化调研子维度 -->
+        <div id="fragmentDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="fragmentDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 片区声音组件 -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">片区声音分析</h3>
+
+        <div class="glass-card rounded-2xl p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧：片区和声音列表明细 -->
+            <div class="lg:col-span-2">
+              <h4 class="text-lg font-bold text-slate-900 mb-4">片区声音明细</h4>
+              <div class="space-y-2 max-h-96 overflow-y-auto">
+                <div id="soundDetailList">
+                  <!-- 动态生成 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 右侧：类别占比 -->
+            <div>
+              <h4 class="text-lg font-bold text-slate-900 mb-4">声音类别占比</h4>
+              <div class="h-80">
+                <canvas id="soundCategoryChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 重要岗位对比分析 -->
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">重要岗位对比分析</h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+          <button
+            onclick="showPositionTab('ranking', this)"
+            class="tab-btn tab-btn-active py-3 px-3 rounded-xl text-white text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 hover:shadow-lg active:scale-95"
+            aria-label="排名对比"
+          >
+            📊 排名对比
+          </button>
+          <button
+            onclick="showPositionTab('detail', this)"
+            class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+            aria-label="详细数据"
+          >
+            📈 详细数据
+          </button>
+          <button
+            onclick="showPositionTab('satisfaction', this)"
+            class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+            aria-label="满意度对比"
+          >
+            ⭐ 满意度
+          </button>
+          <button
+            onclick="showPositionTab('process', this)"
+            class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+            aria-label="过程管理"
+          >
+            🎯 过程管理
+          </button>
+          <button
+            onclick="showPositionTab('culture', this)"
+            class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+            aria-label="文化传播"
+          >
+            🎨 文化传播
+          </button>
+          <button
+            onclick="showPositionTab('chart', this)"
+            class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+            aria-label="图表分析"
+          >
+            📉 图表分析
+          </button>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6">
+          <!-- 排名对比 -->
+          <div id="ranking" class="tab-content">
+            <h4 class="text-lg font-bold text-slate-900 mb-6">岗位综合得分排名</h4>
+            <div class="overflow-x-auto">
+              <table class="ranking-table">
+                <thead>
+                  <tr>
+                    <th>排名</th>
+                    <th>岗位</th>
+                    <th>综合得分</th>
+                    <th>相对整体</th>
+                    <th>趋势</th>
+                  </tr>
+                </thead>
+                <tbody id="rankingTable">
+                  <!-- 动态生成 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 详细数据 -->
+          <div id="detail" class="tab-content hidden">
+            <h4 class="text-lg font-bold text-slate-900 mb-6">各岗位详细指标</h4>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="detailGrid">
+              <!-- 动态生成 -->
+            </div>
+          </div>
+
+          <!-- 满意度对比 -->
+          <div id="satisfaction" class="tab-content hidden">
+            <h4 class="text-lg font-bold text-slate-900 mb-6">员工满意度调研得分对比</h4>
+            <div class="space-y-4">
+              <div id="satisfactionComparison">
+                <!-- 动态生成 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 过程管理 -->
+          <div id="process" class="tab-content hidden">
+            <h4 class="text-lg font-bold text-slate-900 mb-6">过程管理得分对比</h4>
+            <div class="space-y-4">
+              <div id="processComparison">
+                <!-- 动态生成 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 文化传播 -->
+          <div id="culture" class="tab-content hidden">
+            <h4 class="text-lg font-bold text-slate-900 mb-6">文化价值观传播对比</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div id="cultureGrid">
+                <!-- 动态生成 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 图表分析 -->
+          <div id="chart" class="tab-content hidden">
+            <h4 class="text-lg font-bold text-slate-900 mb-8 flex items-center gap-2">
+              <span class="text-2xl">📊</span> 多维度对比分析
+            </h4>
+
+            <div class="charts-grid">
+              <!-- 各岗位综合得分 -->
+              <div class="chart-card">
+                <div class="chart-title">
+                  <div class="chart-title-icon chart-title-icon-blue">📊</div>
+                  <span>各岗位综合得分</span>
+                </div>
+                <div class="chart-canvas-wrapper">
+                  <canvas id="positionRankChart"></canvas>
+                </div>
+                <div class="chart-stats">
+                  <div class="chart-stat-item">
+                    <div class="chart-stat-value" id="chartMaxScore">95.82</div>
+                    <div class="chart-stat-label">最高分</div>
+                  </div>
+                  <div class="chart-stat-item">
+                    <div class="chart-stat-value" id="chartMinScore">80.67</div>
+                    <div class="chart-stat-label">最低分</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 岗位得分分布 -->
+              <div class="chart-card">
+                <div class="chart-title">
+                  <div class="chart-title-icon chart-title-icon-green">🎯</div>
+                  <span>岗位得分分布</span>
+                </div>
+                <div class="chart-canvas-wrapper">
+                  <canvas id="positionDistributionChart"></canvas>
+                </div>
+                <div class="chart-legend">
+                  <div class="chart-legend-item">
+                    <div class="chart-legend-color" style="background: rgba(14, 165, 233, 1);"></div>
+                    岗位得分
+                  </div>
+                </div>
+              </div>
+
+              <!-- 员工满意度趋势 -->
+              <div class="chart-card full-width">
+                <div class="chart-title">
+                  <div class="chart-title-icon chart-title-icon-purple">📈</div>
+                  <span>员工满意度趋势 (24H2 ~ 25Q4)</span>
+                </div>
+                <div class="chart-canvas-wrapper" style="height: 400px;">
+                  <canvas id="satisfactionTrendChart"></canvas>
+                </div>
+                <div class="mt-4 p-3 bg-purple-50 rounded border border-purple-200">
+                  <p class="text-xs text-purple-700"><strong>说明：</strong>显示选中片区员工满意度在四个季度的变化趋势</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 图表说明 -->
+            <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+              <h5 class="font-semibold text-blue-900 mb-3">📋 图表分析说明</h5>
+              <ul class="space-y-2 text-sm text-blue-800">
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span><strong>综合得分柱状图：</strong>展示各岗位总体幸福指数，直观对比岗位表现差异</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span><strong>岗位得分分布：</strong>展示各岗位得分的分布情况，了解整体岗位表现水平</span>
+                </li>
+                <li class="flex gap-2">
+                  <span>•</span>
+                  <span><strong>员工满意度趋势：</strong>展示四个季度(24H2、25Q2、25Q3、25Q4)的满意度变化趋势，帮助快速识别满意度上升/下降的关键时期</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <!-- Load data first -->
+  <script src="happiness.js"></script>
+  <script src="typeble.js"></script>
+  <script src="sound.js"></script>
+
+  <!-- Then run the application -->
+  <script>
+    // ============ DATA PROCESSING ============
+    const processData = () => {
+      if (typeof happiness === 'undefined' || !Array.isArray(happiness)) {
+        console.error('happiness 数据未正确加载');
+        return { districtStats: {}, positionStats: {} };
+      }
+
+      const districts = {};
+      const positions = {};
+
+      // Filter data
+      happiness.forEach(item => {
+        const district = item.片区;
+        const position = item.数据维度值;
+        const shop = item.营业店;
+        const score = parseFloat(item.幸福指数综合得分);
+
+        if (isNaN(score) || !district) return;
+
+        // 片区数据：数据维度值 = "-" 且 营业店 = "-"
+        if (position === "-" && shop === "-") {
+          if (!districts[district]) {
+            districts[district] = [];
+          }
+          districts[district].push({ score, ...item });
+        }
+
+        // 岗位数据：数据维度值 ≠ "-" 且 营业店 = "-"
+        if (position !== "-" && shop === "-") {
+          if (!positions[position]) {
+            positions[position] = {};
+          }
+          if (!positions[position][district]) {
+            positions[position][district] = [];
+          }
+          positions[position][district].push({ score, ...item });
+        }
+      });
+
+      // Calculate district averages
+      const districtStats = {};
+      Object.entries(districts).forEach(([district, data]) => {
+        const scores = data.map(d => d.score);
+        districtStats[district] = {
+          avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+          min: Math.min(...scores),
+          max: Math.max(...scores),
+          count: scores.length
+        };
+      });
+
+      // Calculate position averages
+      const positionStats = {};
+      Object.entries(positions).forEach(([position, districtData]) => {
+        const allScores = [];
+        const byDistrict = {};
+
+        Object.entries(districtData).forEach(([district, data]) => {
+          const scores = data.map(d => d.score);
+          byDistrict[district] = {
+            avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+            count: scores.length
+          };
+          allScores.push(...scores);
+        });
+
+        positionStats[position] = {
+          overall: allScores.reduce((a, b) => a + b, 0) / allScores.length,
+          byDistrict,
+          count: allScores.length
+        };
+      });
+
+      console.log('数据处理完成：', { districtCount: Object.keys(districtStats).length, positionCount: Object.keys(positionStats).length });
+
+      return { districtStats, positionStats, districts, positions };
+    };
+
+    const { districtStats, positionStats, districts, positions } = processData();
+
+    // ============ UTILITY FUNCTIONS ============
+    const getScoreBadgeClass = (score) => {
+      if (score >= 90) return 'score-a-plus';
+      if (score >= 80) return 'score-a';
+      if (score >= 70) return 'score-b-plus';
+      if (score >= 60) return 'score-b';
+      if (score >= 50) return 'score-c';
+      return 'score-d';
+    };
+
+    const getScoreGrade = (score) => {
+      if (score >= 90) return 'A+';
+      if (score >= 80) return 'A';
+      if (score >= 70) return 'B+';
+      if (score >= 60) return 'B';
+      if (score >= 50) return 'C';
+      return 'D';
+    };
+
+    const getScoreLabel = (score) => {
+      if (score >= 90) return '优秀';
+      if (score >= 80) return '良好';
+      if (score >= 70) return '中等偏上';
+      if (score >= 60) return '中等';
+      if (score >= 50) return '待改进';
+      return '需关注';
+    };
+
+    const getRankBadgeClass = (rank) => {
+      if (rank === 1) return 'rank-1';
+      if (rank === 2) return 'rank-2';
+      if (rank === 3) return 'rank-3';
+      return 'rank-other';
+    };
+
+    // ============ RENDER FUNCTIONS ============
+
+    // 1. Render District Cards
+    const renderDistrictCards = () => {
+      const container = document.getElementById('districtCardsContainer');
+      const sorted = Object.entries(districtStats)
+        .sort((a, b) => b[1].avg - a[1].avg);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8">暂无数据</p>';
+        return;
+      }
+
+      container.innerHTML = sorted.map(([name, stats]) => `
+        <div class="district-card glass-card rounded-2xl p-6 flex items-center gap-6">
+          <div class="score-badge ${getScoreBadgeClass(stats.avg)}">
+            ${stats.avg.toFixed(1)}
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-lg text-slate-900">${name}</h3>
+            <p class="text-sm text-slate-500 mt-1">${stats.count}个数据点</p>
+            <div class="mt-2 text-sm text-slate-600">
+              <span class="font-semibold text-slate-900">${getScoreGrade(stats.avg)}</span> - ${getScoreLabel(stats.avg)}
+            </div>
+            <div class="mt-1 text-xs text-slate-500">
+              最高: ${stats.max.toFixed(1)} | 最低: ${stats.min.toFixed(1)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // 2. Render Top Districts List
+    const renderTopDistricts = () => {
+      const container = document.getElementById('topDistrictsList');
+      const sorted = Object.entries(districtStats)
+        .sort((a, b) => b[1].avg - a[1].avg)
+        .slice(0, 5);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-4">暂无数据</p>';
+        return;
+      }
+
+      container.innerHTML = sorted.map(([name, stats], idx) => `
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+          <div class="rank-badge ${getRankBadgeClass(idx + 1)}">${idx + 1}</div>
+          <div class="flex-1">
+            <p class="font-semibold text-slate-900">${name}</p>
+            <p class="text-xs text-slate-500">${getScoreGrade(stats.avg)} - ${getScoreLabel(stats.avg)}</p>
+          </div>
+          <div class="text-right">
+            <p class="font-bold text-lg text-slate-900">${stats.avg.toFixed(1)}</p>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // 3. Render District Filter Buttons
+    const renderDistrictFilters = () => {
+      const container = document.getElementById('districtFilterContainer');
+      const districtList = Object.keys(districtStats).sort();
+
+      if (districtList.length === 0) {
+        container.innerHTML = '<p class="text-slate-500">暂无片区数据</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <button class="filter-chip active" data-district="全部" role="button" tabindex="0">
+          全部片区
+        </button>
+      ` + districtList.map(d => `
+        <button class="filter-chip" data-district="${d}" role="button" tabindex="0">
+          ${d}
+        </button>
+      `).join('');
+
+      document.querySelectorAll('[data-district]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-district]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const selected = btn.dataset.district;
+          updateDistrictViews(selected);
+        });
+
+        btn.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+      });
+    };
+
+    // 4. Render Position Detailed List
+    const renderPositionDetails = (selectedDistrict = '全部') => {
+      const container = document.getElementById('positionDetailContainer');
+
+      // 注释：Position Detailed List 容器已删除，无需渲染
+      if (!container) return;
+
+      const stats = selectedDistrict === '全部'
+        ? Object.entries(positionStats).sort((a, b) => b[1].overall - a[1].overall)
+        : Object.entries(positionStats)
+            .map(([pos, data]) => [pos, { overall: data.byDistrict[selectedDistrict]?.avg || 0 }])
+            .filter(([_, d]) => d.overall > 0)
+            .sort((a, b) => b[1].overall - a[1].overall);
+
+      if (stats.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8">暂无岗位数据</p>';
+        return;
+      }
+
+      container.innerHTML = stats.map(([position, data], idx) => `
+        <div class="glass-card rounded-2xl p-6 mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-lg font-bold text-slate-900">${idx + 1}. ${position}</h4>
+              <p class="text-sm text-slate-600 mt-1">${getScoreLabel(data.overall)}</p>
+            </div>
+            <div class="score-badge ${getScoreBadgeClass(data.overall)}" style="width: 80px; height: 80px; font-size: 1.5rem;">
+              ${data.overall.toFixed(1)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // 5. Update Position Statistics
+    const updatePositionStats = (selectedDistrict = '全部') => {
+      let scores = [];
+      let positions_list = [];
+
+      if (selectedDistrict === '全部') {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          scores.push(data.overall);
+          positions_list.push({ name: pos, score: data.overall });
+        });
+      } else {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          if (data.byDistrict[selectedDistrict]) {
+            scores.push(data.byDistrict[selectedDistrict].avg);
+            positions_list.push({ name: pos, score: data.byDistrict[selectedDistrict].avg });
+          }
+        });
+      }
+
+      // 注释：Position Stats组件已删除，这些元素不再需要更新
+      // if (scores.length > 0) {
+      //   const avg = scores.reduce((a, b) => a + b) / scores.length;
+      //   if (document.getElementById('positionAvgScore')) document.getElementById('positionAvgScore').textContent = avg.toFixed(1);
+      //   if (document.getElementById('positionCount')) document.getElementById('positionCount').textContent = positions_list.length;
+      //   const max = positions_list.reduce((a, b) => a.score > b.score ? a : b);
+      //   const min = positions_list.reduce((a, b) => a.score < b.score ? a : b);
+      //   if (document.getElementById('positionMaxPos')) document.getElementById('positionMaxPos').textContent = max.name;
+      //   if (document.getElementById('positionMinPos')) document.getElementById('positionMinPos').textContent = min.name;
+      // }
+    };
+
+    // 6. Update District Statistics
+    const updateDistrictStats = () => {
+      const scores = Object.values(districtStats).map(d => d.avg);
+      if (scores.length === 0) return;
+
+      const avg = scores.reduce((a, b) => a + b) / scores.length;
+      const max = Math.max(...scores);
+      const min = Math.min(...scores);
+
+      // 移除了overallScore元素的引用
+      document.getElementById('districtCount').textContent = Object.keys(districtStats).length;
+      document.getElementById('districtAvgScore').textContent = avg.toFixed(1);
+      document.getElementById('districtMaxScore').textContent = max.toFixed(1);
+      document.getElementById('districtMinScore').textContent = min.toFixed(1);
+    };
+
+    // 7. Update All Position Views
+    const updatePositionViews = (selectedDistrict) => {
+      updatePositionStats(selectedDistrict);
+      renderPositionDetails(selectedDistrict);
+      updatePositionCharts(selectedDistrict);
+    };
+
+    // ============ CHARTS ============
+
+    let distChart, posRankChart, posDistChart, allDistrictsChart;
+
+    // District Distribution Chart
+    const renderDistrictChart = () => {
+      const ctx = document.getElementById('districtDistributionChart');
+      if (!ctx) return;
+
+      const scores = Object.values(districtStats).map(d => d.avg);
+      if (scores.length === 0) return;
+
+      const ranges = {
+        '90-100': scores.filter(s => s >= 90).length,
+        '80-89': scores.filter(s => s >= 80 && s < 90).length,
+        '70-79': scores.filter(s => s >= 70 && s < 80).length,
+        '60-69': scores.filter(s => s >= 60 && s < 70).length,
+        '<60': scores.filter(s => s < 60).length
+      };
+
+      distChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(ranges),
+          datasets: [{
+            data: Object.values(ranges),
+            backgroundColor: ['#10b981', '#0ea5e9', '#eab308', '#f59e0b', '#ef4444'],
+            borderColor: 'white',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { padding: 15, font: { size: 12 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              borderRadius: 8,
+              titleFont: { size: 13 }
+            }
+          }
+        }
+      });
+    };
+
+    // All Districts Bar Chart
+    const renderAllDistrictsBarChart = () => {
+      const ctx = document.getElementById('allDistrictsBarChart');
+      if (!ctx) return;
+
+      const sorted = Object.entries(districtStats)
+        .sort((a, b) => b[1].avg - a[1].avg);
+      
+      if (sorted.length === 0) return;
+
+      const labels = sorted.map(([name]) => name);
+      const data = sorted.map(([, stats]) => stats.avg);
+      
+      // 计算平均得分
+      const avgScore = data.reduce((sum, score) => sum + score, 0) / data.length;
+
+      allDistrictsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '幸福指数',
+              data: data,
+              backgroundColor: data.map(score => {
+                if (score >= 90) return '#10b981';
+                if (score >= 80) return '#0ea5e9';
+                if (score >= 70) return '#eab308';
+                if (score >= 60) return '#f59e0b';
+                return '#ef4444';
+              }),
+              borderRadius: 8,
+              borderSkipped: false
+            },
+            {
+              label: '平均得分',
+              data: Array(data.length).fill(avgScore),
+              type: 'line',
+              borderColor: '#ef4444',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              display: true,
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                boxWidth: 8
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              borderRadius: 8,
+              titleFont: { size: 13 },
+              callbacks: {
+                label: function(context) {
+                  if (context.datasetIndex === 0) {
+                    const score = context.raw;
+                    return `分数: ${score.toFixed(1)} - ${getScoreLabel(score)}`;
+                  } else {
+                    return `平均得分: ${context.raw.toFixed(1)}`;
+                  }
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: '幸福指数'
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 45,
+                minRotation: 45
+              }
+            }
+          },
+          animation: {
+            duration: 2000,
+            easing: 'easeOutQuart'
+          }
+        }
+      });
+    };
+
+    // Position Ranking Chart
+    const renderPositionRankChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('positionRankChart');
+      if (!ctx) return;
+
+      let positions_data = [];
+      if (selectedDistrict === '全部') {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          positions_data.push({ name: pos, score: data.overall });
+        });
+      } else {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          if (data.byDistrict[selectedDistrict]) {
+            positions_data.push({ name: pos, score: data.byDistrict[selectedDistrict].avg });
+          }
+        });
+      }
+
+      const sorted = positions_data.sort((a, b) => b.score - a.score).slice(0, 10);
+      const labels = sorted.map(d => d.name);
+      const data = sorted.map(d => d.score);
+
+      // 计算整体平均分
+      const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+      const overallScore = overallData.length > 0 ?
+        overallData.reduce((sum, d) => sum + parseFloat(d['幸福指数综合得分'] || 0), 0) / overallData.length : 0;
+
+      // 更新最高分和最低分（仅在元素存在时）
+      if (data.length > 0) {
+        const maxScore = Math.max(...data);
+        const minScore = Math.min(...data);
+        const maxScoreEl = document.getElementById('chartMaxScore');
+        const minScoreEl = document.getElementById('chartMinScore');
+        if (maxScoreEl) maxScoreEl.textContent = maxScore.toFixed(2);
+        if (minScoreEl) minScoreEl.textContent = minScore.toFixed(2);
+      }
+
+      if (!posRankChart) {
+        posRankChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: '幸福指数',
+                data,
+                backgroundColor: data.map(score => {
+                  if (score >= 90) return '#10b981';
+                  if (score >= 80) return '#0ea5e9';
+                  if (score >= 70) return '#eab308';
+                  return '#ef4444';
+                }),
+                borderRadius: 6,
+                borderSkipped: false,
+                order: 1
+              },
+              {
+                label: '整体平均分',
+                data: Array(labels.length).fill(overallScore),
+                type: 'line',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false,
+                tension: 0,
+                order: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  padding: 15
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    if (context.datasetIndex === 0) {
+                      return `幸福指数: ${context.raw.toFixed(2)}`;
+                    } else {
+                      return `整体平均: ${context.raw.toFixed(2)}`;
+                    }
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                title: {
+                  display: true,
+                  text: '幸福指数'
+                }
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 0
+                }
+              }
+            }
+          }
+        });
+      } else {
+        posRankChart.data.labels = labels;
+        posRankChart.data.datasets[0].data = data;
+        posRankChart.data.datasets[0].backgroundColor = data.map(score => {
+          if (score >= 90) return '#10b981';
+          if (score >= 80) return '#0ea5e9';
+          if (score >= 70) return '#eab308';
+          return '#ef4444';
+        });
+        posRankChart.data.datasets[1].data = Array(labels.length).fill(overallScore);
+        posRankChart.update();
+      }
+    };
+
+    // Position Distribution Chart
+    const renderPositionDistChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('positionDistributionChart');
+      if (!ctx) return;
+
+      // 准备岗位得分数据
+      let positions_data = [];
+      if (selectedDistrict === '全部') {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          positions_data.push({ name: pos, score: data.overall });
+        });
+      } else {
+        Object.entries(positionStats).forEach(([pos, data]) => {
+          if (data.byDistrict[selectedDistrict]) {
+            positions_data.push({ name: pos, score: data.byDistrict[selectedDistrict].avg });
+          }
+        });
+      }
+
+      // 按得分排序并取前8个岗位
+      const sorted = positions_data.sort((a, b) => b.score - a.score).slice(0, 8);
+      const labels = sorted.map(d => d.name);
+      const data = sorted.map(d => d.score);
+
+      if (!posDistChart) {
+        posDistChart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '岗位得分',
+              data: data,
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderColor: 'rgb(59, 130, 246)',
+              pointBackgroundColor: 'rgb(59, 130, 246)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(59, 130, 246)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                angleLines: {
+                  display: true
+                },
+                suggestedMin: 0,
+                suggestedMax: 100
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const score = context.raw;
+                    return `得分: ${score.toFixed(1)}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        posDistChart.data.labels = labels;
+        posDistChart.data.datasets[0].data = data;
+        posDistChart.update();
+      }
+    };
+
+    const updatePositionCharts = (selectedDistrict) => {
+      renderPositionRankChart(selectedDistrict);
+      renderPositionDistChart(selectedDistrict);
+      renderSatisfactionTrendChart(selectedDistrict);
+    };
+
+    // ============ SATISFACTION TREND CHART ============
+    let satisfactionTrendChart = null;
+
+    // 趋势图由主片区筛选器控制，不需要单独初始化
+
+    // 渲染员工满意度趋势图
+    const renderSatisfactionTrendChart = (selectedDistrict = '全部') => {
+      if (typeof typeble === 'undefined' || !Array.isArray(typeble)) {
+        console.error('typeble 数据未加载');
+        return;
+      }
+
+      // 过滤数据
+      let filteredData = typeble;
+      if (selectedDistrict !== '全部') {
+        filteredData = typeble.filter(item => item.type === selectedDistrict);
+      }
+
+      // 按数据处理
+      let datasets = [];
+      let labels = ['24H2', '25Q2', '25Q3', '25Q4'];
+
+      if (selectedDistrict === '全部') {
+        // 全部片区：计算平均值
+        const avgData = {
+          '24H2': 0,
+          '25Q2': 0,
+          '25Q3': 0,
+          '25Q4': 0
+        };
+
+        filteredData.forEach(item => {
+          Object.keys(avgData).forEach(quarter => {
+            avgData[quarter] += parseFloat(item[quarter] || 0);
+          });
+        });
+
+        Object.keys(avgData).forEach(quarter => {
+          avgData[quarter] = (avgData[quarter] / filteredData.length * 100).toFixed(2);
+        });
+
+        datasets.push({
+          label: '全部片区平均值',
+          data: [avgData['24H2'], avgData['25Q2'], avgData['25Q3'], avgData['25Q4']],
+          borderColor: 'rgba(139, 92, 246, 1)',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 6,
+          pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        });
+      } else {
+        // 单个片区：显示该片区数据
+        if (filteredData.length > 0) {
+          const item = filteredData[0];
+          const data = [
+            (parseFloat(item['24H2']) * 100).toFixed(2),
+            (parseFloat(item['25Q2']) * 100).toFixed(2),
+            (parseFloat(item['25Q3']) * 100).toFixed(2),
+            (parseFloat(item['25Q4']) * 100).toFixed(2)
+          ];
+
+          datasets.push({
+            label: item.type,
+            data: data,
+            borderColor: 'rgba(14, 165, 233, 1)',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 6,
+            pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          });
+        }
+      }
+
+      // 获取canvas并初始化或更新图表
+      const ctx = document.getElementById('satisfactionTrendChart');
+      if (!ctx) {
+        console.error('satisfactionTrendChart canvas not found');
+        return;
+      }
+
+      // 销毁之前的图表实例
+      if (satisfactionTrendChart instanceof Chart) {
+        satisfactionTrendChart.destroy();
+      }
+
+      satisfactionTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: '满意度得分（百分制）'
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 15,
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              borderRadius: 8,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+
+    // ============ ADDITIONAL FUNCTIONS FOR SHANGHAI COMPONENTS ============
+
+    // 初始化四维度的子维度
+    function initializeDimensionSubitems(selectedDistrict = '全部') {
+      // 员工满意度子维度
+      const employeeDims = [
+        { id: '文化', label: '文化' },
+        { id: '管理', label: '管理' },
+        { id: '发展', label: '发展' },
+        { id: '敬业', label: '敬业' },
+        { id: '回报', label: '回报' },
+        { id: '效率', label: '效率' }
+      ];
+
+      renderDimensionCards('employeeDimensions', employeeDims, selectedDistrict);
+
+      // 过程管理子维度
+      const processDims = [
+        { id: '过程管理-管理', label: '管理' },
+        { id: '过程管理-效率', label: '效率' },
+        { id: '过程管理-发展', label: '发展' },
+        { id: '过程管理-回报', label: '回报' }
+      ];
+
+      renderDimensionCards('processDimensions', processDims, selectedDistrict);
+
+      // 声音管理子维度
+      const voiceDims = [
+        { id: '处理时效', label: '处理时效' },
+        { id: '满意率', label: '满意度' }
+      ];
+
+      renderDimensionCards('voiceDimensions', voiceDims, selectedDistrict);
+
+      // 碎片化调研子维度
+      const fragmentDims = [
+        { id: '廉洁调研', label: '廉洁调研' },
+        { id: '文化价值观（转换为百分制）', label: '文化价值观' }
+      ];
+
+      renderDimensionCards('fragmentDimensions', fragmentDims, selectedDistrict);
+    }
+
+    // 渲染维度卡片
+    function renderDimensionCards(elementId, dimensions, selectedDistrict) {
+      const grid = document.getElementById(elementId);
+      if (!grid) return;
+
+      // 获取选中片区的数据
+      let selectedData = [];
+      if (selectedDistrict === '全部') {
+        selectedData = happiness.filter(item => item.数据维度值 === '-' && item.营业店 === '-');
+      } else {
+        selectedData = happiness.filter(item => item.片区 === selectedDistrict && item.数据维度值 === '-' && item.营业店 === '-');
+      }
+
+      // 如果没有数据，显示空状态
+      if (selectedData.length === 0) {
+        grid.innerHTML = dimensions.map(dim => `
+          <div class="stat-card opacity-50">
+            <div class="text-2xl font-bold text-gray-400">—</div>
+            <div class="stat-label">${dim.label}</div>
+          </div>
+        `).join('');
+        return;
+      }
+
+      // 使用第一个数据项作为代表
+      const data = selectedData[0];
+
+      grid.innerHTML = dimensions.map(dim => {
+        const value = data[dim.id];
+        if (value === '-' || value === undefined) {
+          return `
+            <div class="stat-card opacity-50">
+              <div class="text-2xl font-bold text-gray-400">—</div>
+              <div class="stat-label">${dim.label}</div>
+            </div>
+          `;
+        }
+
+        const numValue = parseFloat(value);
+        const color = numValue >= 90 ? 'from-green-400 to-emerald-500' :
+                      numValue >= 80 ? 'from-blue-400 to-cyan-500' :
+                      numValue >= 70 ? 'from-yellow-400 to-orange-500' :
+                      'from-orange-400 to-red-500';
+        return `
+          <div class="stat-card">
+            <div class="text-2xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent">${numValue.toFixed(1)}</div>
+            <div class="stat-label">${dim.label}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 维度标签切换
+    window.showDimensionTab = function(id, button) {
+      // 隐藏所有维度内容
+      document.querySelectorAll('.dimension-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+
+      // 显示选中的维度内容
+      const dimMap = {
+        'employee': 'employeeDimension',
+        'process': 'processDimension',
+        'voice': 'voiceDimension',
+        'fragment': 'fragmentDimension'
+      };
+
+      if (dimMap[id]) {
+        document.getElementById(dimMap[id]).classList.remove('hidden');
+      }
+
+      // 更新按钮样式
+      document.querySelectorAll('.dimension-tab').forEach(btn => {
+        btn.classList.remove('dimension-tab-active', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-slate-100', 'text-slate-700');
+      });
+
+      button.classList.remove('bg-slate-100', 'text-slate-700');
+      button.classList.add('dimension-tab-active', 'text-white');
+    };
+
+    // 初始化岗位对比
+    function initializePositionComparison(selectedDistrict = '全部') {
+      // 获取岗位数据
+      let positionData = [];
+      if (selectedDistrict === '全部') {
+        // 对岗位数据进行分组，计算每个岗位的平均值
+        const positionGroups = {};
+        happiness.filter(item => item.数据维度值 !== '-' && item.营业店 === '-').forEach(item => {
+          const position = item.数据维度值;
+          if (!positionGroups[position]) {
+            positionGroups[position] = [];
+          }
+          positionGroups[position].push(item);
+        });
+        
+        // 计算每个岗位的平均值
+        Object.entries(positionGroups).forEach(([position, items]) => {
+          const avgScore = items.reduce((sum, item) => sum + parseFloat(item['幸福指数综合得分']), 0) / items.length;
+          const avgEmployeeSatisfaction = items.reduce((sum, item) => sum + parseFloat(item['员满调研'] || 0), 0) / items.length;
+          const avgProcessManagement = items.reduce((sum, item) => sum + parseFloat(item['过程管理'] || 0), 0) / items.length;
+          const avgVoiceManagement = items.reduce((sum, item) => sum + parseFloat(item['声音管理'] || 0), 0) / items.length;
+          const avgFragmentSurvey = items.reduce((sum, item) => sum + parseFloat(item['碎片化调研'] || 0), 0) / items.length;
+          
+          positionData.push({
+            '数据维度值': position,
+            '幸福指数综合得分': avgScore,
+            '员满调研': avgEmployeeSatisfaction,
+            '过程管理': avgProcessManagement,
+            '声音管理': avgVoiceManagement,
+            '碎片化调研': avgFragmentSurvey
+          });
+        });
+      } else {
+        positionData = happiness.filter(item => item.片区 === selectedDistrict && item.数据维度值 !== '-' && item.营业店 === '-');
+      }
+
+      // 排名对比
+      const sorted = [...positionData].sort((a, b) =>
+        parseFloat(b['幸福指数综合得分']) - parseFloat(a['幸福指数综合得分'])
+      );
+
+      const rankingTable = document.getElementById('rankingTable');
+      if (rankingTable) {
+        rankingTable.innerHTML = sorted.map((item, index) => {
+          const score = parseFloat(item['幸福指数综合得分']);
+          // 计算整体平均得分
+          const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+          const overallScore = overallData.length > 0 ? 
+            overallData.reduce((sum, d) => sum + parseFloat(d['幸福指数综合得分'] || 0), 0) / overallData.length : 0;
+          const diff = score - overallScore;
+          const rankClass = `rank-badge-${index + 1 <= 3 ? index + 1 : 'other'}`;
+          const trend = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+          const trendColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-600';
+
+          return `
+            <tr>
+              <td><div class="rank-badge ${rankClass}">${index + 1}</div></td>
+              <td class="font-semibold">${item['数据维度值']}</td>
+              <td class="font-bold text-blue-600">${score.toFixed(2)}</td>
+              <td class="${diff > 0 ? 'text-green-600 font-semibold' : diff < 0 ? 'text-red-600 font-semibold' : ''}">${diff > 0 ? '+' : ''}${diff.toFixed(2)}</td>
+              <td class="${trendColor} text-lg font-bold">${trend}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 详细数据卡片
+      const detailGrid = document.getElementById('detailGrid');
+      if (detailGrid) {
+        detailGrid.innerHTML = positionData.map(item => {
+          const score = parseFloat(item['幸福指数综合得分']);
+          const color = score >= 90 ? 'from-green-500 to-emerald-600' :
+                        score >= 80 ? 'from-blue-500 to-cyan-600' :
+                        'from-orange-500 to-red-600';
+
+          return `
+            <div class="glass-card rounded-xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-slate-900">${item['数据维度值']}</h4>
+                <div class="score-badge ${getScoreBadgeClass(score)}">
+                  ${score.toFixed(1)}
+                </div>
+              </div>
+              <div class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-600">员工满意度:</span>
+                  <span class="font-semibold text-blue-600">${item['员满调研'] !== '-' ? parseFloat(item['员满调研']).toFixed(2) : '—'}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">过程管理:</span>
+                  <span class="font-semibold">${item['过程管理'] !== '-' ? parseFloat(item['过程管理']).toFixed(2) : '—'}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">声音管理:</span>
+                  <span class="font-semibold">${item['声音管理'] !== '-' ? parseFloat(item['声音管理']).toFixed(2) : '—'}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-600">碎片化调研:</span>
+                  <span class="font-semibold">${item['碎片化调研'] !== '-' ? parseFloat(item['碎片化调研']).toFixed(2) : '—'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 满意度对比
+      const satisfactionComp = document.getElementById('satisfactionComparison');
+      if (satisfactionComp) {
+        const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+        const overallSat = overallData.length > 0 ? 
+          overallData.reduce((sum, d) => sum + parseFloat(d['员满调研'] || 0), 0) / overallData.length : 0;
+        
+        satisfactionComp.innerHTML = positionData.map(item => {
+          const sat = parseFloat(item['员满调研']);
+          const width = (sat / 100) * 100;
+          return `
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+                <span class="text-lg font-bold text-blue-600">${sat.toFixed(2)}</span>
+              </div>
+              <div class="comparison-bar">
+                <div class="comparison-fill" style="width: ${width}%">${sat.toFixed(1)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 过程管理对比
+      const processComp = document.getElementById('processComparison');
+      if (processComp) {
+        const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+        const overallProcess = overallData.length > 0 ? 
+          overallData.reduce((sum, d) => sum + parseFloat(d['过程管理'] || 0), 0) / overallData.length : 0;
+        
+        processComp.innerHTML = positionData
+          .filter(item => item['过程管理'] !== '-')
+          .map(item => {
+            const proc = parseFloat(item['过程管理']);
+            const width = (proc / 100) * 100;
+            return `
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+                  <span class="text-lg font-bold text-blue-600">${proc.toFixed(2)}</span>
+                </div>
+                <div class="comparison-bar">
+                  <div class="comparison-fill" style="width: ${width}%">${proc.toFixed(1)}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+      }
+
+      // 文化价值观对比
+      const cultureGrid = document.getElementById('cultureGrid');
+      if (cultureGrid) {
+        cultureGrid.innerHTML = positionData
+          .filter(item => item['文化价值观（转换为百分制）'] !== '-')
+          .map(item => {
+            const culture = parseFloat(item['文化价值观（转换为百分制）']);
+            return `
+              <div class="glass-card rounded-xl p-6">
+                <h4 class="font-semibold text-slate-900 mb-3">${item['数据维度值']}</h4>
+                <div class="text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent mb-2">
+                  ${culture.toFixed(2)}
+                </div>
+                <p class="text-xs text-slate-600">文化价值观传播得分</p>
+              </div>
+            `;
+          }).join('');
+      }
+    }
+
+    // 标签切换
+    window.showPositionTab = function(id, button) {
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+      document.getElementById(id).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('tab-btn-active', 'text-white');
+        btn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+      });
+
+      button.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+      button.classList.add('tab-btn-active', 'text-white');
+
+      // 图表重绘
+      if (id === 'chart') {
+        setTimeout(() => initializeCharts(), 100);
+      }
+    };
+
+    // 初始化图表
+    function initializeCharts() {
+      renderPositionRankChart();
+      renderPositionDistChart();
+    }
+
+    // 备用初始化函数（如果需要更多图表）
+    function initializeChartsAdvanced() {
+      // 此函数保留用于后续扩展
+      const dimensionCtx = document.getElementById('dimensionChart');
+      if (dimensionCtx) {
+        // 计算整体四维度得分
+        const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+        const dimensions = ['员满调研', '过程管理', '声音管理', '碎片化调研'];
+        const dimensionScores = dimensions.map(dim => {
+          const scores = overallData.map(item => parseFloat(item[dim] || 0));
+          return scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        });
+
+        new Chart(dimensionCtx, {
+          type: 'radar',
+          data: {
+            labels: dimensions,
+            datasets: [{
+              label: '整体',
+              data: dimensionScores,
+              borderColor: 'rgba(14, 165, 233, 1)',
+              backgroundColor: 'rgba(14, 165, 233, 0.15)',
+              borderWidth: 2.5,
+              pointRadius: 6,
+              pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // ============ SOUND COMPONENT ============
+
+    // Initialize Sound Component
+    const initializeSoundComponent = (selectedDistrict = '全部') => {
+      renderSoundDetailList(selectedDistrict);
+      renderSoundCategoryChart(selectedDistrict);
+    };
+
+    // Render Sound Detail List
+    const renderSoundDetailList = (selectedDistrict = '全部') => {
+      const container = document.getElementById('soundDetailList');
+      if (!container) return;
+
+      // 过滤数据
+      let filteredData = sound;
+      if (selectedDistrict !== '全部') {
+        filteredData = sound.filter(item => item.片区 === selectedDistrict);
+      }
+
+      if (filteredData.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-4">暂无声音数据</p>';
+        return;
+      }
+
+      // 按片区分组
+      const groupedByDistrict = {};
+      filteredData.forEach(item => {
+        if (!groupedByDistrict[item.片区]) {
+          groupedByDistrict[item.片区] = [];
+        }
+        groupedByDistrict[item.片区].push(item);
+      });
+
+      // 渲染列表
+      let html = '';
+      Object.entries(groupedByDistrict).forEach(([district, items]) => {
+        html += `
+          <div class="border-b border-slate-200 pb-3 last:border-b-0">
+            <div class="font-semibold text-slate-900 text-sm mb-2 flex items-center gap-2">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">${items.length}</span>
+              ${district}
+            </div>
+            <div class="space-y-1">
+              ${items.map(item => `
+                <div class="flex items-start gap-2 text-xs bg-slate-50 p-2 rounded">
+                  <span class="text-slate-500">${item.年份} ${item.受理月份}</span>
+                  <span class="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-700">${item.声音类别}</span>
+                  <span class="text-slate-600 flex-1">${item.部门}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    };
+
+    // Render Sound Category Chart
+    let soundChart;
+    const renderSoundCategoryChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('soundCategoryChart');
+      if (!ctx) return;
+
+      // 过滤数据
+      let filteredData = sound;
+      if (selectedDistrict !== '全部') {
+        filteredData = sound.filter(item => item.片区 === selectedDistrict);
+      }
+
+      if (filteredData.length === 0) {
+        if (soundChart) soundChart.destroy();
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        return;
+      }
+
+      // 按声音类别统计
+      const categoryCount = {};
+      filteredData.forEach(item => {
+        categoryCount[item.声音类别] = (categoryCount[item.声音类别] || 0) + 1;
+      });
+
+      // 按数量排序，取前8个
+      const sortedCategories = Object.entries(categoryCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+      const labels = sortedCategories.map(([cat]) => cat);
+      const data = sortedCategories.map(([_, count]) => count);
+
+      // 定义颜色
+      const colors = [
+        '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+        '#8b5cf6', '#ec4899', '#06b6d4', '#6366f1'
+      ];
+
+      if (soundChart) {
+        soundChart.destroy();
+      }
+
+      soundChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors.slice(0, labels.length),
+            borderColor: 'white',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 10,
+                font: { size: 11 },
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 10,
+              borderRadius: 6,
+              titleFont: { size: 12 },
+              bodyFont: { size: 11 },
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${ctx.parsed.y}条`
+              }
+            }
+          }
+        }
+      });
+    };
+
+    // 更新片区筛选时的所有视图
+    function updateDistrictViews(selectedDistrict) {
+      updatePositionViews(selectedDistrict);
+      initializeDimensionSubitems(selectedDistrict);
+      initializePositionComparison(selectedDistrict);
+      renderSatisfactionTrendChart(selectedDistrict);
+      initializeSoundComponent(selectedDistrict);
+    }
+
+    // ============ INITIALIZATION ============
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('初始化仪表板...');
+      updateDistrictStats();
+      renderDistrictCards();
+      renderTopDistricts();
+      renderDistrictChart();
+      renderAllDistrictsBarChart();
+      renderDistrictFilters();
+
+      // 初始化各岗位综合得分图表
+      renderPositionRankChart();
+      renderPositionDistChart();
+
+      // 初始化员工满意度趋势图表（通过片区筛选触发）
+      renderSatisfactionTrendChart('全部');
+
+      // 初始化上海仪表板组件
+      initializeDimensionSubitems();
+      initializePositionComparison();
+
+      // 初始化片区声音组件
+      initializeSoundComponent();
+
+      // 侧栏切换功能
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('active');
+        });
+
+        // 点击侧栏外部关闭侧栏（移动端）
+        document.addEventListener('click', function(event) {
+          if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+          }
+        });
+
+        // 点击侧栏项目后关闭菜单
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+          });
+        });
+      }
+
+      // 高亮当前页面的导航项
+      const currentPath = window.location.href.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navbar-nav a, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+
+      console.log('初始化完成');
+    });
+  </script>
+
+  <script src="utils.js"></script>
+  <script src="a11y-feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>幸福指数多维度评价逻辑</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-manager.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-50 min-h-screen text-slate-900">
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <button id="sidebarToggle" class="sidebar-toggle hidden-desktop">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="navbar-brand">
+      <img src="logo.png" alt="幸福生态平台" class="navbar-logo">
+      幸福生态平台
+    </div>
+    <nav class="navbar-nav">
+      <a href="index.html">首页</a>
+      <a href="happiness.html" class="active">评分逻辑</a>
+      <a href="shanghai-happiness-dashboard.html">上海区分析</a>
+      <a href="happiness-dashboard-new.html">片区分析</a>
+      <a href="happiness-shop-dashboard.html">营业店分析</a>
+      <button class="theme-toggle" aria-label="切换主题">🌙</button>
+    </nav>
+  </nav>
+
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item">
+        <a href="index.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          首页
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness.html" class="active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+          评分逻辑
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="shanghai-happiness-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path>
+            <path d="M7 8h10M7 13h5M7 18h3"></path>
+          </svg>
+          上海区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-dashboard-new.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          片区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-shop-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6-7 6 7M9 5v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V5M9 9h6M9 13h6"></path>
+          </svg>
+          营业店分析
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 背景装饰 -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 -left-4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="main-wrapper">
+    <div class="container relative z-10">
+    <!-- 页眉 -->
+    <div class="mb-12">
+      <div class="glass-effect rounded-2xl p-8 sm:p-12 hero-fade border-t-2 border-blue-300">
+        <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          幸福指数多维度评价
+        </h1>
+        <p class="text-slate-600 text-lg font-light">系统化的员工幸福度评估框架，涵盖四大维度</p>
+        <div class="mt-4 flex gap-2">
+          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+          <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 标签导航 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+      <button
+        onclick="showTab('employeeSurvey', this)"
+        class="tab-btn tab-btn-active py-3 px-4 rounded-xl text-sm font-600 cursor-pointer transition-all duration-300 hover:shadow-lg active:scale-95 btn-ripple relative"
+        aria-label="员工满意度调研"
+      >
+        <div class="text-base">👥 员工调研</div>
+        <div class="text-xs opacity-90 mt-1">权重 30%</div>
+      </button>
+      <button
+        onclick="showTab('processManagement', this)"
+        class="tab-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50 hover:shadow-lg active:scale-95 btn-ripple relative"
+        aria-label="过程管理指标"
+      >
+        <div class="text-base">📊 过程管理</div>
+        <div class="text-xs opacity-75 mt-1">权重 30%</div>
+      </button>
+      <button
+        onclick="showTab('voiceManagement', this)"
+        class="tab-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50 hover:shadow-lg active:scale-95 btn-ripple relative"
+        aria-label="声音管理评价"
+      >
+        <div class="text-base">🎤 声音管理</div>
+        <div class="text-xs opacity-75 mt-1">权重 30%</div>
+      </button>
+      <button
+        onclick="showTab('fragmentSurvey', this)"
+        class="tab-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50 hover:shadow-lg active:scale-95 btn-ripple relative"
+        aria-label="碎片化调研数据"
+      >
+        <div class="text-base">🔍 碎片化调研</div>
+        <div class="text-xs opacity-75 mt-1">权重 10%</div>
+      </button>
+    </div>
+
+    <!-- 标签内容容器 -->
+    <div class="glass-effect rounded-2xl p-6 sm:p-8">
+      <!-- 员工满意度调研 -->
+      <div id="employeeSurvey" class="tab-content tab-content-item">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <!-- 文化卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-emerald-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">🎨</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">文化</h3>
+                  <p class="text-xs text-slate-500">价值观、顺丰精神在日常践行如何</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-emerald-600 font-bold text-xl leading-none">•</span>
+                  <span>价值观：新版文化价值观在日常工作中体现如何</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-emerald-600 font-bold text-xl leading-none">•</span>
+                  <span>顺丰精神：公司伙伴对顺丰精神在日常工作中践行程度如何</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 管理卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-blue-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">👔</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">管理</h3>
+                  <p class="text-xs text-slate-500">上下级关系质量影响满意度</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-blue-600 font-bold text-xl leading-none">•</span>
+                  <span>公平：考核规则是否清晰，反馈合理性如何</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-blue-600 font-bold text-xl leading-none">•</span>
+                  <span>管理温度：对您的直属上级的管理方式进行打分</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 发展卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-purple-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">🚀</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">发展</h3>
+                  <p class="text-xs text-slate-500">发展机会与回报留任关联</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-purple-600 font-bold text-xl leading-none">•</span>
+                  <span>培训：新工与在职培训整体满意度</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-purple-600 font-bold text-xl leading-none">•</span>
+                  <span>发展机会：提供的发展机会与发展前景整体满意度</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <!-- 敬业卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-orange-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">💪</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">敬业</h3>
+                  <p class="text-xs text-slate-500">留任行为背后的心理状态(忠诚/消极维持)</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-orange-600 font-bold text-xl leading-none">•</span>
+                  <span>留任：即使外部有类似机会，仍会选择继续留在顺丰</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-orange-600 font-bold text-xl leading-none">•</span>
+                  <span>努力：愿意付出额外的努力帮助顺丰取得成功</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-orange-600 font-bold text-xl leading-none">•</span>
+                  <span>推荐：愿意推荐他人加入顺丰</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 回报卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-rose-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">💰</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">回报</h3>
+                  <p class="text-xs text-slate-500">投入产出比感知关联文化与发展</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-rose-600 font-bold text-xl leading-none">•</span>
+                  <span>物质回报：物质回报（如计提等）能激励更好完成工作</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-rose-600 font-bold text-xl leading-none">•</span>
+                  <span>精神回报：评价体系（荣誉体系、服务分等）满意度</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 效率卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-cyan-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">⚡</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">效率</h3>
+                  <p class="text-xs text-slate-500">系统、工具影响效率感知</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-cyan-600 font-bold text-xl leading-none">•</span>
+                  <span>闲时：目前对劳动强度的改善满意度如何</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-cyan-600 font-bold text-xl leading-none">•</span>
+                  <span>工具：工具、流程使用便利性和时效性满意度如何</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-cyan-600 font-bold text-xl leading-none">•</span>
+                  <span>授权：打包授权（如业务类、运营类）落地效果如何</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-cyan-600 font-bold text-xl leading-none">•</span>
+                  <span>职能服务：职能保障服务方面评价如何</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 过程管理 -->
+      <div id="processManagement" class="tab-content tab-content-item hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <!-- 管理指标卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-indigo-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">👥</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">管理 <span class="text-sm opacity-75">(8个)</span></h3>
+                  <p class="text-xs text-slate-500">流失率监测</p>
+                </div>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>收派岗全量流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>客户经理主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>仓管岗主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>运作岗主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>司机岗主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>客服&理赔岗主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>网点经营管理队伍主动流失率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-indigo-600 font-bold text-lg leading-none">▸</span>
+                  <span>核心岗位主动流失率</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 发展指标卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-teal-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">📈</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">发展 <span class="text-sm opacity-75">(5个)</span></h3>
+                  <p class="text-xs text-slate-500">人才成长</p>
+                </div>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-teal-600 font-bold text-lg leading-none">▸</span>
+                  <span>新老客诉倍数</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-teal-600 font-bold text-lg leading-none">▸</span>
+                  <span>小哥多元发展</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-teal-600 font-bold text-lg leading-none">▸</span>
+                  <span>网点负责人发展性流动率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-teal-600 font-bold text-lg leading-none">▸</span>
+                  <span>网点负责人向下异动率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-teal-600 font-bold text-lg leading-none">▸</span>
+                  <span>职能绩优发展指数</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <!-- 效率指标卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-yellow-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">⚙️</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">效率 <span class="text-sm opacity-75">(4个)</span></h3>
+                  <p class="text-xs text-slate-500">工作效能</p>
+                </div>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-yellow-600 font-bold text-lg leading-none">▸</span>
+                  <span>0休占比</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-yellow-600 font-bold text-lg leading-none">▸</span>
+                  <span>真实工作时长</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-yellow-600 font-bold text-lg leading-none">▸</span>
+                  <span>称重工具应配未配率</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-yellow-600 font-bold text-lg leading-none">▸</span>
+                  <span>打印机应配未配率</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 回报指标卡片 -->
+            <div class="card-hover glass-light rounded-xl p-6 border border-fuchsia-500/30 gradient-border">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="text-3xl">💵</div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">回报 <span class="text-sm opacity-75">(7个)</span></h3>
+                  <p class="text-xs text-slate-500">薪酬竞争力</p>
+                </div>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-700">
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>收派薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>销售薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>仓管薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>运作薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>司机薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>网点经营管理队伍薪酬竞争力</span>
+                </li>
+                <li class="flex gap-2 list-item-enter">
+                  <span class="text-fuchsia-600 font-bold text-lg leading-none">▸</span>
+                  <span>职能薪酬竞争力</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 声音管理 -->
+      <div id="voiceManagement" class="tab-content tab-content-item hidden">
+        <div class="max-w-3xl mx-auto">
+          <div class="space-y-6">
+            <!-- 处理时效卡片 -->
+            <div class="card-hover glass-light rounded-xl p-8 border border-green-500/30 gradient-border">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center text-3xl">⏱️</div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold text-slate-900">处理时效</h3>
+                  <p class="text-sm text-slate-600 mt-1">确保声音快速响应和闭环</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-slate-700">
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-green-600 font-bold text-lg leading-none">✓</span>
+                  <span>对处理时效进行评价：(受理率+闭环率)/2</span>
+                </li>
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-green-600 font-bold text-lg leading-none">✓</span>
+                  <span>输出TOP声音：将员工满意度声音统一打标</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 处理评价卡片 -->
+            <div class="card-hover glass-light rounded-xl p-8 border border-blue-500/30 gradient-border">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center text-3xl">⭐</div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold text-slate-900">处理评价</h3>
+                  <p class="text-sm text-slate-600 mt-1">评估声音处理的满意度</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-slate-700">
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-blue-600 font-bold text-lg leading-none">✓</span>
+                  <span>满意度：对声音处理满意度进行评价</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 碎片化调研 -->
+      <div id="fragmentSurvey" class="tab-content tab-content-item hidden">
+        <div class="max-w-3xl mx-auto">
+          <div class="space-y-6">
+            <!-- H线卡片 -->
+            <div class="card-hover glass-light rounded-xl p-8 border border-pink-500/30 gradient-border">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center text-3xl">🎯</div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold text-slate-900">H线</h3>
+                  <p class="text-sm text-slate-600 mt-1">全网范围内的评价指标</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-slate-700">
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-pink-600 font-bold text-lg leading-none">◆</span>
+                  <span>文化价值观-全网：文化价值观他评得分</span>
+                </li>
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-pink-600 font-bold text-lg leading-none">◆</span>
+                  <span>诉访评价-全网：诉访查实情况</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 其它卡片 -->
+            <div class="card-hover glass-light rounded-xl p-8 border border-amber-500/30 gradient-border">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-100 to-yellow-100 flex items-center justify-center text-3xl">📋</div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold text-slate-900">其他调研</h3>
+                  <p class="text-sm text-slate-600 mt-1">专项评价指标</p>
+                </div>
+              </div>
+              <ul class="space-y-3 text-slate-700">
+                <li class="flex gap-3 list-item-enter">
+                  <span class="text-amber-600 font-bold text-lg leading-none">◆</span>
+                  <span>廉洁调研-全网：廉洁调研评价</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="utils.js"></script>
+  <script src="a11y-feedback.js"></script>
+  <script>
+    function showTab(id, button) {
+      // 隐藏所有标签内容（带动画）
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+
+      // 显示选中的标签内容（带动画）
+      const targetContent = document.getElementById(id);
+      if (targetContent) {
+        targetContent.classList.remove('hidden');
+        // 触发动画重排
+        void targetContent.offsetWidth;
+      }
+
+      // 更新按钮样式
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('tab-btn-active');
+        btn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+      });
+
+      if (button) {
+        button.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+        button.classList.add('tab-btn-active');
+      }
+    }
+
+    // 初始化第一个标签
+    document.addEventListener('DOMContentLoaded', function() {
+      const firstBtn = document.querySelector('.tab-btn');
+      if (firstBtn) {
+        showTab('employeeSurvey', firstBtn);
+      }
+
+      // 侧栏切换功能
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('active');
+        });
+
+        // 点击侧栏外部关闭侧栏（移动端）
+        document.addEventListener('click', function(event) {
+          if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+          }
+        });
+
+        // 点击侧栏项目后关闭菜单
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+          });
+        });
+      }
+
+      // 高亮当前页面的导航项
+      const currentPath = window.location.href.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navbar-nav a, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

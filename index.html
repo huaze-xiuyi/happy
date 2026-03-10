@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>幸福生态平台 - 顺丰员工幸福指数管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-manager.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-50">
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <button id="sidebarToggle" class="sidebar-toggle hidden-desktop">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="navbar-brand">
+      <img src="logo.png" alt="幸福生态平台" class="navbar-logo">
+      幸福生态平台
+    </div>
+    <nav class="navbar-nav">
+      <a href="index.html" class="active">首页</a>
+      <a href="happiness.html">评分逻辑</a>
+      <a href="shanghai-happiness-dashboard.html">上海区分析</a>
+      <a href="happiness-dashboard-new.html">片区分析</a>
+      <a href="happiness-shop-dashboard.html">营业店分析</a>
+      <button class="theme-toggle" aria-label="切换主题">🌙</button>
+    </nav>
+  </nav>
+
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item">
+        <a href="index.html" class="active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          首页
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+          评分逻辑
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="shanghai-happiness-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path>
+            <path d="M7 8h10M7 13h5M7 18h3"></path>
+          </svg>
+          上海区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-dashboard-new.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          片区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-shop-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6-7 6 7M9 5v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V5M9 9h6M9 13h6"></path>
+          </svg>
+          营业店分析
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 主容器 -->
+  <div class="main-wrapper">
+    <div class="container">
+      <!-- 页头 -->
+      <div class="glass-effect rounded-2xl p-12 mb-12 hero-fade border-t-4 border-blue-400">
+        <h1 class="text-5xl font-bold text-slate-900 mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          幸福生态平台
+        </h1>
+        <p class="text-lg text-slate-600 font-light max-w-2xl">
+          系统化的员工幸福度评估框架，涵盖四大维度、多个指标，为顺丰网点管理赋能
+        </p>
+        <div class="flex gap-3 mt-6">
+          <div class="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></div>
+          <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" style="animation-delay: 0.2s;"></div>
+          <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" style="animation-delay: 0.4s;"></div>
+        </div>
+      </div>
+
+      <!-- 快速导航 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <!-- 评分逻辑 -->
+        <a href="happiness.html" class="card-hover glass-card rounded-2xl p-8 group hover:border-blue-300">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              📋
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-blue-500 transition-colors">
+              <path d="M5 12h14M12 5v14"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">评分逻辑</h3>
+          <p class="text-sm text-slate-600 mb-4">
+            理解幸福指数的多维度评价体系，包括员工调研、过程管理、声音管理、碎片化调研等维度
+          </p>
+          <div class="flex items-center gap-2 text-primary font-600 text-sm group-hover:gap-3 transition-all">
+            查看详情 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+          </div>
+        </a>
+
+        <!-- 上海区分析 -->
+        <a href="shanghai-happiness-dashboard.html" class="card-hover glass-card rounded-2xl p-8 group hover:border-emerald-300">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              📊
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-emerald-500 transition-colors">
+              <path d="M5 12h14M12 5v14"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">上海区分析</h3>
+          <p class="text-sm text-slate-600 mb-4">
+            查看上海区范围内的幸福指数分布、趋势分析、地理分布和重点关注指标
+          </p>
+          <div class="flex items-center gap-2 text-emerald-600 font-600 text-sm group-hover:gap-3 transition-all">
+            查看仪表板 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+          </div>
+        </a>
+
+        <!-- 片区分析 -->
+        <a href="happiness-dashboard-new.html" class="card-hover glass-card rounded-2xl p-8 group hover:border-purple-300">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              🏪
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-purple-500 transition-colors">
+              <path d="M5 12h14M12 5v14"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">片区分析</h3>
+          <p class="text-sm text-slate-600 mb-4">
+            深入分析各片区的幸福指数，包括四维度子维度、声音管理、岗位对比等多维分析
+          </p>
+          <div class="flex items-center gap-2 text-purple-600 font-600 text-sm group-hover:gap-3 transition-all">
+            查看仪表板 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+          </div>
+        </a>
+
+        <!-- 营业店分析 -->
+        <a href="happiness-shop-dashboard.html" class="card-hover glass-card rounded-2xl p-8 group hover:border-orange-300">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+              🏬
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-400 group-hover:text-orange-500 transition-colors">
+              <path d="M5 12h14M12 5v14"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">营业店分析</h3>
+          <p class="text-sm text-slate-600 mb-4">
+            精细化分析各营业店的幸福指数，支持级联筛选和多维度对比分析
+          </p>
+          <div class="flex items-center gap-2 text-orange-600 font-600 text-sm group-hover:gap-3 transition-all">
+            查看仪表板 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+          </div>
+        </a>
+      </div>
+
+      <!-- 系统特性 -->
+      <section class="mb-12">
+        <h2 class="text-3xl font-bold text-slate-900 mb-8 text-center">系统特性</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- 特性1 -->
+          <div class="glass-light rounded-2xl p-8 border border-blue-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-200 to-blue-100 flex items-center justify-center mb-4 text-xl">
+              🎯
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">多维度评估</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              从员工调研、过程管理、声音管理、碎片化调研等四个维度全面评估员工幸福度，权重配置科学合理
+            </p>
+          </div>
+
+          <!-- 特性2 -->
+          <div class="glass-light rounded-2xl p-8 border border-emerald-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-200 to-emerald-100 flex items-center justify-center mb-4 text-xl">
+              📈
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">数据可视化</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              采用现代化的图表展示，包括折线图、柱状图、雷达图、甜甜圈图等，直观呈现数据关系和趋势
+            </p>
+          </div>
+
+          <!-- 特性3 -->
+          <div class="glass-light rounded-2xl p-8 border border-purple-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-200 to-purple-100 flex items-center justify-center mb-4 text-xl">
+              🔍
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">灵活筛选</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              支持按片区、营业店、岗位等多个维度筛选，多维度筛选系统让用户能快速定位关键数据
+            </p>
+          </div>
+
+          <!-- 特性4 -->
+          <div class="glass-light rounded-2xl p-8 border border-orange-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-200 to-orange-100 flex items-center justify-center mb-4 text-xl">
+              🏆
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">排名对比</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              清晰展示各片区、营业店、岗位的排名和得分对比，帮助识别优秀和需要改进的领域
+            </p>
+          </div>
+
+          <!-- 特性5 -->
+          <div class="glass-light rounded-2xl p-8 border border-cyan-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-200 to-cyan-100 flex items-center justify-center mb-4 text-xl">
+              🎤
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">声音管理</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              集成员工声音管理系统，追踪和分析员工反馈，按年份和类别进行统计和分析
+            </p>
+          </div>
+
+          <!-- 特性6 -->
+          <div class="glass-light rounded-2xl p-8 border border-rose-200/50">
+            <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-rose-200 to-rose-100 flex items-center justify-center mb-4 text-xl">
+              📱
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-3">响应式设计</h3>
+            <p class="text-slate-600 text-sm leading-relaxed">
+              完全响应式设计，支持桌面、平板、手机等多种设备，确保最佳用户体验
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 快速开始 -->
+      <section class="glass-effect rounded-2xl p-12 border-t-4 border-blue-400">
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">快速开始</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">1</span>
+              查看评分逻辑
+            </h3>
+            <p class="text-slate-600 mb-4">
+              首先了解幸福指数的评分体系，包括四大维度、权重配置和评价标准。
+            </p>
+            <a href="happiness.html" class="btn btn-primary btn-sm">查看详情</a>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold">2</span>
+              分析区域数据
+            </h3>
+            <p class="text-slate-600 mb-4">
+              查看上海区范围内的整体幸福指数分布、地理热力图和关键指标。
+            </p>
+            <a href="shanghai-happiness-dashboard.html" class="btn btn-primary btn-sm">查看仪表板</a>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">3</span>
+              深入片区分析
+            </h3>
+            <p class="text-slate-600 mb-4">
+              选择具体片区，查看详细的四维度分析、声音管理和岗位对比。
+            </p>
+            <a href="happiness-dashboard-new.html" class="btn btn-primary btn-sm">查看仪表板</a>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold">4</span>
+              营业店精细分析
+            </h3>
+            <p class="text-slate-600 mb-4">
+              进入最细粒度的分析，查看单个营业店的详细指标和改进方向。
+            </p>
+            <a href="happiness-shop-dashboard.html" class="btn btn-primary btn-sm">查看仪表板</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 页脚 -->
+      <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-slate-600">
+        <p>© 2026 幸福生态平台 | 顺丰员工幸福指数管理系统</p>
+        <p class="text-sm mt-2">采用现代化的设计理念，为顺丰网点管理赋能</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="utils.js"></script>
+  <script src="a11y-feedback.js"></script>
+  <script src="contrast-checker.js"></script>
+  <script>
+    // 自定义动画
+    document.addEventListener('DOMContentLoaded', function() {
+      // 快速导航卡片淡入动画
+      const cards = document.querySelectorAll('.card-hover, .glass-light');
+      cards.forEach((card, index) => {
+        card.style.animation = `fadeIn 0.6s ease-out ${index * 0.1}s both`;
+      });
+
+      // 侧栏切换功能
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('active');
+        });
+
+        // 点击侧栏外部关闭侧栏（移动端）
+        document.addEventListener('click', function(event) {
+          if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+          }
+        });
+
+        // 点击侧栏项目后关闭菜单
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+          });
+        });
+      }
+
+      // 高亮当前页面的导航项
+      const currentPath = window.location.href.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navbar-nav a, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

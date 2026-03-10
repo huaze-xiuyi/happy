@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>幸福指数仪表板 - 营业店分析</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-manager.js"></script>
+  <style>
+    .glass-card {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glass-card {
+        transition: none;
+      }
+      .glass-card:hover {
+        transform: none;
+      }
+    }
+
+    /* Score Badge */
+    .score-badge {
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.75rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .score-a-plus {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: white;
+    }
+
+    .score-a {
+      background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      color: white;
+    }
+
+    .score-b-plus {
+      background: linear-gradient(135deg, #ca8a04 0%, #eab308 100%);
+      color: white;
+    }
+
+    .score-b {
+      background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+      color: white;
+    }
+
+    .score-c {
+      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+      color: white;
+    }
+
+    .score-d {
+      background: linear-gradient(135deg, #7c2d12 0%, #b45309 100%);
+      color: white;
+    }
+
+    /* Shop Card */
+    .shop-card {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .shop-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .shop-card:hover::before {
+      left: 100%;
+    }
+
+    /* Metric Item */
+    .metric-box {
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(129, 212, 250, 0.05) 100%);
+      border-left: 3px solid #0284c7;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .metric-box:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(129, 212, 250, 0.1) 100%);
+      transform: translateX(2px);
+    }
+
+    .metric-label {
+      font-size: 0.8125rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-value {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Chart Container */
+    .chart-wrapper {
+      position: relative;
+      height: 320px;
+      margin-bottom: 1rem;
+    }
+
+    /* Rank Badge */
+    .rank-badge {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .rank-1 {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: white;
+    }
+
+    .rank-2 {
+      background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+      color: white;
+    }
+
+    .rank-3 {
+      background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+      color: white;
+    }
+
+    .rank-other {
+      background: #e5e7eb;
+      color: #64748b;
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #0366d6 0%, #0284c7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* District Filter Button */
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1.5px solid rgba(3, 102, 214, 0.2);
+      background: rgba(3, 102, 214, 0.05);
+      color: #1e40af;
+    }
+
+    .filter-chip:hover {
+      border-color: #0366d6;
+      background: rgba(3, 102, 214, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      color: white;
+      border-color: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    /* Focus State */
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid #0284c7;
+      outline-offset: 2px;
+    }
+
+    /* Scrollbar Styling */
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Dimension Grid */
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(248, 250, 252, 1);
+      border-color: rgba(14, 165, 233, 0.5);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* Dimension Tab Styles */
+    .dimension-tab {
+      background: rgba(248, 250, 252, 0.9);
+      color: #64748b;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .dimension-tab:hover {
+      border-color: rgba(14, 165, 233, 0.5);
+      background: rgba(248, 250, 252, 1);
+    }
+
+    .dimension-tab-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      border-color: transparent;
+    }
+
+    .dimension-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .dimension-content.hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Tab Button Styles */
+    .tab-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      color: white;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .tab-content.hidden {
+      display: none;
+    }
+
+    /* Ranking Table */
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ranking-table thead th {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(2, 132, 199, 0.1));
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .ranking-table tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .ranking-table tbody tr:hover {
+      background: rgba(14, 165, 233, 0.05);
+    }
+
+    .rank-badge-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
+    .rank-badge-2 { background: linear-gradient(135deg, #c5cae9, #9fa8da); color: white; }
+    .rank-badge-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: white; }
+    .rank-badge-other { background: #e2e8f0; color: #64748b; }
+
+    .comparison-bar {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.1), rgba(14, 165, 233, 0.3));
+      border-radius: 0.5rem;
+      height: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comparison-fill {
+      background: linear-gradient(90deg, #0ea5e9, #0284c7);
+      height: 100%;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 0.5rem;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Chart Styles */
+    .chart-card {
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(240, 249, 255, 0.95));
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #0ea5e9, #0284c7, #06b6d4);
+    }
+
+    .chart-card:hover {
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chart-title-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .chart-title-icon-blue {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.2));
+      color: #0284c7;
+    }
+
+    .chart-title-icon-green {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.2));
+      color: #15803d;
+    }
+
+    .chart-title-icon-purple {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(109, 40, 217, 0.2));
+      color: #6d28d9;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-card.full-width {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .chart-canvas-wrapper {
+      position: relative;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-stat-item {
+      text-align: center;
+    }
+
+    .chart-stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .chart-stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      font-weight: 500;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .chart-legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <button id="sidebarToggle" class="sidebar-toggle hidden-desktop">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="navbar-brand">
+      <img src="logo.png" alt="幸福生态平台" class="navbar-logo">
+      幸福生态平台
+    </div>
+    <nav class="navbar-nav">
+      <a href="index.html">首页</a>
+      <a href="happiness.html">评分逻辑</a>
+      <a href="shanghai-happiness-dashboard.html">上海区分析</a>
+      <a href="happiness-dashboard-new.html">片区分析</a>
+      <a href="happiness-shop-dashboard.html" class="active">营业店分析</a>
+      <button class="theme-toggle" aria-label="切换主题">🌙</button>
+    </nav>
+  </nav>
+
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item">
+        <a href="index.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          首页
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+          评分逻辑
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="shanghai-happiness-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path>
+            <path d="M7 8h10M7 13h5M7 18h3"></path>
+          </svg>
+          上海区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-dashboard-new.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          片区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-shop-dashboard.html" class="active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6-7 6 7M9 5v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V5M9 9h6M9 13h6"></path>
+          </svg>
+          营业店分析
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 主容器 -->
+  <div class="main-wrapper">
+    <div class="container">
+    <!-- Section 1: Shop Overview -->
+    <section class="mb-16">
+      <div class="mb-8">
+        <h2 class="section-title">🏪 营业店幸福指数分析</h2>
+        <p class="text-slate-600 text-lg">显示各营业店的综合幸福指数评分</p>
+      </div>
+
+      <!-- District Filter -->
+      <div class="glass-card rounded-2xl p-6 mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">筛选片区</h3>
+        <div class="flex flex-wrap gap-2" id="districtFilterContainer" role="group" aria-label="片区筛选">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- Shop Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">营业店总数</div>
+          <div class="metric-value" id="shopCount">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">平均得分</div>
+          <div class="metric-value" id="shopAvgScore">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">最高得分</div>
+          <div class="metric-value text-green-600" id="shopMaxScore">--</div>
+        </div>
+        <div class="metric-box glass-card rounded-xl p-6">
+          <div class="metric-label">最低得分</div>
+          <div class="metric-value text-red-600" id="shopMinScore">--</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Distribution Chart -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="text-lg font-bold mb-4 text-slate-900">得分分布</h3>
+          <div class="chart-wrapper">
+            <canvas id="shopDistributionChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top 5 Shops -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="text-lg font-bold mb-4 text-slate-900">Top 5 营业店</h3>
+          <div id="topShopsList" class="space-y-3">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- All Shops Bar Chart -->
+      <div class="glass-card rounded-2xl p-6 mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">各营业店详细分数</h3>
+        <div class="chart-wrapper" style="height: 400px;">
+          <canvas id="allShopsBarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Shop Cards -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">营业店详细得分</h3>
+        <div class="relative">
+          <div class="overflow-y-auto h-[500px] pr-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" id="shopCardsSlider">
+            <div class="flex flex-col gap-4 pb-4" id="shopCardsContainer">
+              <!-- Generated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="border-t-2 border-gray-200 my-16"></div>
+
+    <!-- Section 2: Four Dimensions Sub-dimensions Details -->
+    <section class="mb-16">
+      <div class="mb-8">
+        <h2 class="section-title">👥 重要岗位分析</h2>
+        <p class="text-slate-600 text-lg">按营业店筛选查看各岗位幸福指数</p>
+      </div>
+
+      <!-- Shop Filter for Dimensions -->
+      <div class="glass-card rounded-2xl p-6 mb-8">
+        <h3 class="text-lg font-bold mb-4 text-slate-900">筛选营业店</h3>
+        <div class="flex flex-wrap gap-2" id="shopFilterContainerDim" role="group" aria-label="营业店筛选">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- Four Dimensions Details -->
+      <div class="glass-card rounded-2xl p-8 mb-8">
+        <h3 class="text-lg font-semibold text-slate-900 mb-6">四维度子维度详情</h3>
+
+        <!-- Dimension Selection Tabs -->
+        <div class="flex flex-wrap gap-2 sm:gap-3 mb-8 pb-6 border-b border-slate-200">
+          <button
+            onclick="showShopDimensionTab('employee', this)"
+            class="dimension-tab dimension-tab-active py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300"
+            aria-label="员工满意度调研"
+          >
+            👥 员工满意度<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showShopDimensionTab('process', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="过程管理"
+          >
+            📊 过程管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showShopDimensionTab('voice', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="声音管理"
+          >
+            🎤 声音管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showShopDimensionTab('fragment', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="碎片化调研"
+          >
+            🔍 碎片化调研<span class="text-xs ml-1">(权重10%)</span>
+          </button>
+        </div>
+
+        <!-- Employee Satisfaction Dimensions -->
+        <div id="employeeDimensionShop" class="dimension-content">
+          <div class="dimension-grid" id="employeeDimensionsShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Process Management Dimensions -->
+        <div id="processDimensionShop" class="dimension-content hidden">
+          <div class="dimension-grid" id="processDimensionsShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Voice Management Dimensions -->
+        <div id="voiceDimensionShop" class="dimension-content hidden">
+          <div class="dimension-grid" id="voiceDimensionsShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Fragment Survey Dimensions -->
+        <div id="fragmentDimensionShop" class="dimension-content hidden">
+          <div class="dimension-grid" id="fragmentDimensionsShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="border-t-2 border-gray-200 my-16"></div>
+
+    <!-- Section 3: Important Position Comparison Analysis -->
+    <section class="mb-16">
+      <div class="mb-8">
+        <h2 class="section-title">👥 重要岗位对比分析</h2>
+        <p class="text-slate-600 text-lg">各重要岗位的幸福指数多维度对比</p>
+      </div>
+
+      <!-- Position Comparison Tabs -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+        <button
+          onclick="showPositionTabShop('ranking', this)"
+          class="tab-btn tab-btn-active py-3 px-3 rounded-xl text-white text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 hover:shadow-lg active:scale-95"
+          aria-label="排名对比"
+        >
+          📊 排名对比
+        </button>
+        <button
+          onclick="showPositionTabShop('detail', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="详细数据"
+        >
+          📈 详细数据
+        </button>
+        <button
+          onclick="showPositionTabShop('satisfaction', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="满意度对比"
+        >
+          ⭐ 满意度
+        </button>
+        <button
+          onclick="showPositionTabShop('process', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="过程管理"
+        >
+          🎯 过程管理
+        </button>
+        <button
+          onclick="showPositionTabShop('culture', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="文化传播"
+        >
+          🎨 文化传播
+        </button>
+        <button
+          onclick="showPositionTabShop('chart', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="图表分析"
+        >
+          📉 图表分析
+        </button>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <!-- Ranking Comparison -->
+        <div id="rankingShop" class="tab-content">
+          <h4 class="text-lg font-bold text-slate-900 mb-6">岗位综合得分排名</h4>
+          <div class="overflow-x-auto">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th>排名</th>
+                  <th>岗位</th>
+                  <th>综合得分</th>
+                  <th>相对整体</th>
+                  <th>趋势</th>
+                </tr>
+              </thead>
+              <tbody id="rankingTableShop">
+                <!-- Generated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Detailed Data -->
+        <div id="detailShop" class="tab-content hidden">
+          <h4 class="text-lg font-bold text-slate-900 mb-6">各岗位详细指标</h4>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="detailGridShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Satisfaction Comparison -->
+        <div id="satisfactionShop" class="tab-content hidden">
+          <h4 class="text-lg font-bold text-slate-900 mb-6">员工满意度调研得分对比</h4>
+          <div class="space-y-4" id="satisfactionComparisonShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Process Management -->
+        <div id="processShop" class="tab-content hidden">
+          <h4 class="text-lg font-bold text-slate-900 mb-6">过程管理得分对比</h4>
+          <div class="space-y-4" id="processComparisonShop">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- 文化传播 -->
+        <div id="cultureShop" class="tab-content hidden">
+          <h4 class="text-lg font-bold text-slate-900 mb-6">文化价值观传播对比</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="cultureGridShop">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 图表分析 -->
+        <div id="chartShop" class="tab-content hidden">
+          <h4 class="text-lg font-bold text-slate-900 mb-8 flex items-center gap-2">
+            <span class="text-2xl">📊</span> 多维度对比分析
+          </h4>
+
+          <div class="charts-grid">
+            <!-- 各岗位综合得分 -->
+            <div class="chart-card">
+              <div class="chart-title">
+                <div class="chart-title-icon chart-title-icon-blue">📊</div>
+                <span>各岗位综合得分</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="positionRankChartShop"></canvas>
+              </div>
+              <div class="chart-stats">
+                <div class="chart-stat-item">
+                  <div class="chart-stat-value" id="chartMaxScoreShop">95.82</div>
+                  <div class="chart-stat-label">最高分</div>
+                </div>
+                <div class="chart-stat-item">
+                  <div class="chart-stat-value" id="chartMinScoreShop">80.67</div>
+                  <div class="chart-stat-label">最低分</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 岗位得分分布 -->
+            <div class="chart-card">
+              <div class="chart-title">
+                <div class="chart-title-icon chart-title-icon-green">🎯</div>
+                <span>岗位得分分布</span>
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="positionDistributionChartShop"></canvas>
+              </div>
+              <div class="chart-legend">
+                <div class="chart-legend-item">
+                  <div class="chart-legend-color" style="background: rgba(14, 165, 233, 1);"></div>
+                  岗位得分
+                </div>
+              </div>
+            </div>
+
+            <!-- 员工满意度趋势 -->
+            <div class="chart-card full-width">
+              <div class="chart-title">
+                <div class="chart-title-icon chart-title-icon-purple">📈</div>
+                <span>员工满意度趋势 (24H2 ~ 25Q4)</span>
+              </div>
+              <div class="chart-canvas-wrapper" style="height: 400px;">
+                <canvas id="satisfactionTrendChartShop"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 图表说明 -->
+          <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <h5 class="font-semibold text-blue-900 mb-3">📋 图表分析说明</h5>
+            <ul class="space-y-2 text-sm text-blue-800">
+              <li class="flex gap-2">
+                <span>•</span>
+                <span><strong>综合得分柱状图：</strong>展示各岗位总体幸福指数，直观对比岗位表现差异</span>
+              </li>
+              <li class="flex gap-2">
+                <span>•</span>
+                <span><strong>岗位得分分布：</strong>展示各岗位得分的分布情况，了解整体岗位表现水平</span>
+              </li>
+              <li class="flex gap-2">
+                <span>•</span>
+                <span><strong>员工满意度趋势：</strong>展示四个季度(24H2、25Q2、25Q3、25Q4)的满意度变化趋势，帮助快速识别满意度上升/下降的关键时期</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="border-t-2 border-gray-200 my-16"></div>
+  </div>
+
+  <!-- Load data first -->
+  <script src="happiness.js"></script>
+  <script src="typeble1.js"></script>
+
+  <!-- Then run the application -->
+  <script>
+    // ============ DATA PROCESSING ============
+    const processShopData = () => {
+      if (typeof happiness === 'undefined' || !Array.isArray(happiness)) {
+        console.error('happiness 数据未正确加载');
+        return { shopStats: {}, shops: {}, districtShops: {} };
+      }
+
+      const shops = {};
+      const districtShops = {};
+
+      // Filter data: 营业店 ≠ "-"
+      happiness.forEach(item => {
+        const shop = item.营业店;
+        const district = item.片区;
+        const score = parseFloat(item.幸福指数综合得分);
+
+        if (isNaN(score) || !shop || shop === "-") return;
+
+        // 按营业店聚合
+        if (!shops[shop]) {
+          shops[shop] = {
+            data: [],
+            district: district
+          };
+        }
+        shops[shop].data.push({ score, ...item });
+
+        // 按片区聚合营业店
+        if (!districtShops[district]) {
+          districtShops[district] = {};
+        }
+        if (!districtShops[district][shop]) {
+          districtShops[district][shop] = [];
+        }
+        districtShops[district][shop].push({ score, ...item });
+      });
+
+      // Calculate shop averages
+      const shopStats = {};
+      Object.entries(shops).forEach(([shopName, shopData]) => {
+        const scores = shopData.data.map(d => d.score);
+        shopStats[shopName] = {
+          avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+          min: Math.min(...scores),
+          max: Math.max(...scores),
+          count: scores.length,
+          district: shopData.district
+        };
+      });
+
+      console.log('营业店数据处理完成：', { shopCount: Object.keys(shopStats).length });
+
+      return { shopStats, shops, districtShops };
+    };
+
+    const { shopStats, shops, districtShops } = processShopData();
+
+    // ============ UTILITY FUNCTIONS ============
+    const getScoreBadgeClass = (score) => {
+      if (score >= 90) return 'score-a-plus';
+      if (score >= 80) return 'score-a';
+      if (score >= 70) return 'score-b-plus';
+      if (score >= 60) return 'score-b';
+      if (score >= 50) return 'score-c';
+      return 'score-d';
+    };
+
+    const getScoreGrade = (score) => {
+      if (score >= 90) return 'A+';
+      if (score >= 80) return 'A';
+      if (score >= 70) return 'B+';
+      if (score >= 60) return 'B';
+      if (score >= 50) return 'C';
+      return 'D';
+    };
+
+    const getScoreLabel = (score) => {
+      if (score >= 90) return '优秀';
+      if (score >= 80) return '良好';
+      if (score >= 70) return '中等偏上';
+      if (score >= 60) return '中等';
+      if (score >= 50) return '待改进';
+      return '需关注';
+    };
+
+    const getRankBadgeClass = (rank) => {
+      if (rank === 1) return 'rank-1';
+      if (rank === 2) return 'rank-2';
+      if (rank === 3) return 'rank-3';
+      return 'rank-other';
+    };
+
+    // Filter shop stats by district
+    const getFilteredShops = (selectedDistrict = '全部') => {
+      if (selectedDistrict === '全部') {
+        return shopStats;
+      }
+      const filtered = {};
+      Object.entries(shopStats).forEach(([shop, stats]) => {
+        if (stats.district === selectedDistrict) {
+          filtered[shop] = stats;
+        }
+      });
+      return filtered;
+    };
+
+    // ============ RENDER FUNCTIONS ============
+
+    // 1. Render Shop Cards
+    const renderShopCards = (selectedDistrict = '全部') => {
+      const container = document.getElementById('shopCardsContainer');
+      const filtered = getFilteredShops(selectedDistrict);
+      const sorted = Object.entries(filtered)
+        .sort((a, b) => b[1].avg - a[1].avg);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8">暂无数据</p>';
+        return;
+      }
+
+      container.innerHTML = sorted.map(([name, stats]) => `
+        <div class="shop-card glass-card rounded-2xl p-6 flex items-center gap-6">
+          <div class="score-badge ${getScoreBadgeClass(stats.avg)}">
+            ${stats.avg.toFixed(1)}
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-lg text-slate-900">${name}</h3>
+            <p class="text-sm text-slate-500 mt-1">所属片区：${stats.district}</p>
+            <p class="text-sm text-slate-500">数据点：${stats.count}个</p>
+            <div class="mt-2 text-sm text-slate-600">
+              <span class="font-semibold text-slate-900">${getScoreGrade(stats.avg)}</span> - ${getScoreLabel(stats.avg)}
+            </div>
+            <div class="mt-1 text-xs text-slate-500">
+              最高: ${stats.max.toFixed(1)} | 最低: ${stats.min.toFixed(1)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // 2. Render Top Shops List
+    const renderTopShops = (selectedDistrict = '全部') => {
+      const container = document.getElementById('topShopsList');
+      const filtered = getFilteredShops(selectedDistrict);
+      const sorted = Object.entries(filtered)
+        .sort((a, b) => b[1].avg - a[1].avg)
+        .slice(0, 5);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-4">暂无数据</p>';
+        return;
+      }
+
+      container.innerHTML = sorted.map(([name, stats], idx) => `
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+          <div class="rank-badge ${getRankBadgeClass(idx + 1)}">${idx + 1}</div>
+          <div class="flex-1">
+            <p class="font-semibold text-slate-900">${name}</p>
+            <p class="text-xs text-slate-500">${stats.district}</p>
+          </div>
+          <div class="text-right">
+            <p class="font-bold text-lg text-slate-900">${stats.avg.toFixed(1)}</p>
+            <p class="text-xs text-slate-500">${getScoreGrade(stats.avg)}</p>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // 3. Render District Filter Buttons (Main Filter)
+    const renderDistrictFilters = () => {
+      const container = document.getElementById('districtFilterContainer');
+      const districtList = Array.from(new Set(Object.values(shopStats).map(s => s.district))).sort();
+
+      if (districtList.length === 0) {
+        container.innerHTML = '<p class="text-slate-500">暂无片区数据</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <button class="filter-chip active" data-district="全部" role="button" tabindex="0">
+          全部片区
+        </button>
+      ` + districtList.map(d => `
+        <button class="filter-chip" data-district="${d}" role="button" tabindex="0">
+          ${d}
+        </button>
+      `).join('');
+
+      document.querySelectorAll('[data-district]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-district]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const selected = btn.dataset.district;
+          updateAllViews(selected);
+        });
+
+        btn.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+      });
+    };
+
+    // Render Shop Filter for Dimensions Analysis
+    const renderShopFilterForDimensions = (selectedDistrict = '全部') => {
+      const container = document.getElementById('shopFilterContainerDim');
+      if (!container) return;
+
+      // Get unique shops for the selected district
+      let shopList = [];
+      if (selectedDistrict === '全部') {
+        // Get all shops from shopStats
+        shopList = Object.keys(shopStats);
+      } else {
+        // Get shops for the selected district
+        if (districtShops[selectedDistrict]) {
+          shopList = Object.keys(districtShops[selectedDistrict]);
+        }
+      }
+
+      shopList.sort();
+
+      container.innerHTML = `
+        <button class="filter-chip active" data-shop="全部营业店" role="button" tabindex="0">
+          全部营业店
+        </button>
+      ` + shopList.map(shop => `
+        <button class="filter-chip" data-shop="${shop}" role="button" tabindex="0">
+          ${shop}
+        </button>
+      `).join('');
+
+      document.querySelectorAll('#shopFilterContainerDim [data-shop]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#shopFilterContainerDim [data-shop]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const selectedShop = btn.dataset.shop;
+          initializeDimensionSubitems(selectedDistrict, selectedShop);
+          initializePositionComparisonForShop(selectedDistrict, selectedShop);
+        });
+
+        btn.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+      });
+    };
+
+    // 4. Update Overall Shop Statistics
+    const updateShopStats = (selectedDistrict = '全部') => {
+      const filtered = getFilteredShops(selectedDistrict);
+      const scores = Object.values(filtered).map(d => d.avg);
+      if (scores.length === 0) {
+        document.getElementById('shopCount').textContent = '0';
+        document.getElementById('shopAvgScore').textContent = '--';
+        document.getElementById('shopMaxScore').textContent = '--';
+        document.getElementById('shopMinScore').textContent = '--';
+        return;
+      }
+
+      const avg = scores.reduce((a, b) => a + b) / scores.length;
+      const max = Math.max(...scores);
+      const min = Math.min(...scores);
+
+      document.getElementById('shopCount').textContent = Object.keys(filtered).length;
+      document.getElementById('shopAvgScore').textContent = avg.toFixed(1);
+      document.getElementById('shopMaxScore').textContent = max.toFixed(1);
+      document.getElementById('shopMinScore').textContent = min.toFixed(1);
+    };
+
+    // 5. Render Detailed Shops List
+    const renderDistrictShops = (selectedDistrict = '全部') => {
+      const container = document.getElementById('districtShopsContainer');
+      let shopsList = [];
+
+      if (selectedDistrict === '全部') {
+        Object.entries(shopStats).forEach(([shop, data]) => {
+          shopsList.push({ name: shop, ...data });
+        });
+      } else {
+        if (districtShops[selectedDistrict]) {
+          Object.entries(districtShops[selectedDistrict]).forEach(([shop, data]) => {
+            const scores = data.map(d => d.score);
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            shopsList.push({
+              name: shop,
+              avg,
+              count: scores.length,
+              max: Math.max(...scores),
+              min: Math.min(...scores)
+            });
+          });
+        }
+      }
+
+      const sorted = shopsList.sort((a, b) => b.avg - a.avg);
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-center py-8">暂无营业店数据</p>';
+        return;
+      }
+
+      container.innerHTML = sorted.map((item, idx) => `
+        <div class="glass-card rounded-2xl p-6 mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-lg font-bold text-slate-900">${idx + 1}. ${item.name}</h4>
+              <p class="text-sm text-slate-600 mt-1">${getScoreLabel(item.avg)} | ${item.count}个数据点</p>
+            </div>
+            <div class="score-badge ${getScoreBadgeClass(item.avg)}" style="width: 80px; height: 80px; font-size: 1.5rem;">
+              ${item.avg.toFixed(1)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // ============ CHARTS ============
+
+    let shopDistChart, allShopsChart, districtShopsChart;
+
+    // Shop Distribution Chart
+    const renderShopDistChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('shopDistributionChart');
+      if (!ctx) return;
+
+      const filtered = getFilteredShops(selectedDistrict);
+      const scores = Object.values(filtered).map(d => d.avg);
+      if (scores.length === 0) return;
+
+      const ranges = {
+        '90-100': scores.filter(s => s >= 90).length,
+        '80-89': scores.filter(s => s >= 80 && s < 90).length,
+        '70-79': scores.filter(s => s >= 70 && s < 80).length,
+        '60-69': scores.filter(s => s >= 60 && s < 70).length,
+        '<60': scores.filter(s => s < 60).length
+      };
+
+      if (shopDistChart) {
+        shopDistChart.data.datasets[0].data = Object.values(ranges);
+        shopDistChart.update();
+      } else {
+        shopDistChart = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: Object.keys(ranges),
+            datasets: [{
+              data: Object.values(ranges),
+              backgroundColor: ['#10b981', '#0ea5e9', '#eab308', '#f59e0b', '#ef4444'],
+              borderColor: 'white',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { padding: 15, font: { size: 12 } }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                titleFont: { size: 13 }
+              }
+            }
+          }
+        });
+      }
+    };
+
+    // All Shops Bar Chart
+    const renderAllShopsBarChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('allShopsBarChart');
+      if (!ctx) return;
+
+      const filtered = getFilteredShops(selectedDistrict);
+      const sorted = Object.entries(filtered)
+        .sort((a, b) => b[1].avg - a[1].avg);
+
+      if (sorted.length === 0) return;
+
+      const labels = sorted.map(([name]) => name);
+      const data = sorted.map(([, stats]) => stats.avg);
+      const avgScore = data.reduce((sum, score) => sum + score, 0) / data.length;
+
+      if (allShopsChart) {
+        allShopsChart.data.labels = labels;
+        allShopsChart.data.datasets[0].data = data;
+        allShopsChart.data.datasets[0].backgroundColor = data.map(score => {
+          if (score >= 90) return '#10b981';
+          if (score >= 80) return '#0ea5e9';
+          if (score >= 70) return '#eab308';
+          if (score >= 60) return '#f59e0b';
+          return '#ef4444';
+        });
+        allShopsChart.data.datasets[1].data = Array(data.length).fill(avgScore);
+        allShopsChart.update();
+      } else {
+        allShopsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '幸福指数',
+                data: data,
+                backgroundColor: data.map(score => {
+                  if (score >= 90) return '#10b981';
+                  if (score >= 80) return '#0ea5e9';
+                  if (score >= 70) return '#eab308';
+                  if (score >= 60) return '#f59e0b';
+                  return '#ef4444';
+                }),
+                borderRadius: 8,
+                borderSkipped: false
+              },
+              {
+                label: '平均得分',
+                data: Array(data.length).fill(avgScore),
+                type: 'line',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  boxWidth: 8
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                titleFont: { size: 13 },
+                callbacks: {
+                  label: function(context) {
+                    if (context.datasetIndex === 0) {
+                      const score = context.raw;
+                      return `分数: ${score.toFixed(1)} - ${getScoreLabel(score)}`;
+                    } else {
+                      return `平均得分: ${context.raw.toFixed(1)}`;
+                    }
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                title: {
+                  display: true,
+                  text: '幸福指数'
+                }
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45
+                }
+              }
+            },
+            animation: {
+              duration: 2000,
+              easing: 'easeOutQuart'
+            }
+          }
+        });
+      }
+    };
+
+    // District Shops Chart
+    const renderDistrictShopsChart = (selectedDistrict = '全部') => {
+      const ctx = document.getElementById('districtShopsChart');
+      if (!ctx) return;
+
+      let shopsData = [];
+
+      if (selectedDistrict === '全部') {
+        Object.entries(shopStats).forEach(([shop, data]) => {
+          shopsData.push({ name: shop, score: data.avg });
+        });
+      } else {
+        if (districtShops[selectedDistrict]) {
+          Object.entries(districtShops[selectedDistrict]).forEach(([shop, data]) => {
+            const scores = data.map(d => d.score);
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            shopsData.push({ name: shop, score: avg });
+          });
+        }
+      }
+
+      const sorted = shopsData.sort((a, b) => b.score - a.score);
+      const labels = sorted.map(d => d.name);
+      const data = sorted.map(d => d.score);
+
+      if (!districtShopsChart) {
+        districtShopsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: '幸福指数',
+              data,
+              backgroundColor: data.map(score => {
+                if (score >= 90) return '#10b981';
+                if (score >= 80) return '#0ea5e9';
+                if (score >= 70) return '#eab308';
+                if (score >= 60) return '#f59e0b';
+                return '#ef4444';
+              }),
+              borderRadius: 8,
+              borderSkipped: false
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const score = context.raw;
+                    return `分数: ${score.toFixed(1)} - ${getScoreLabel(score)}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { max: 100 }
+            }
+          }
+        });
+      } else {
+        districtShopsChart.data.labels = labels;
+        districtShopsChart.data.datasets[0].data = data;
+        districtShopsChart.data.datasets[0].backgroundColor = data.map(score => {
+          if (score >= 90) return '#10b981';
+          if (score >= 80) return '#0ea5e9';
+          if (score >= 70) return '#eab308';
+          if (score >= 60) return '#f59e0b';
+          return '#ef4444';
+        });
+        districtShopsChart.update();
+      }
+    };
+
+    // Update All Views (called by main filter)
+    const updateAllViews = (selectedDistrict) => {
+      updateShopStats(selectedDistrict);
+      renderShopCards(selectedDistrict);
+      renderTopShops(selectedDistrict);
+      renderShopDistChart(selectedDistrict);
+      renderAllShopsBarChart(selectedDistrict);
+      renderShopFilterForDimensions(selectedDistrict);
+      initializeDimensionSubitems(selectedDistrict, '全部营业店');
+      initializePositionComparisonForShop(selectedDistrict, '全部营业店');
+    };
+
+    // ============ INITIALIZATION ============
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('初始化营业店仪表板...');
+      console.log('typeble1 loaded:', typeof typeble1 !== 'undefined', typeble1 ? typeble1.length : 0);
+      renderDistrictFilters();
+      updateAllViews('全部');
+      initializeDimensionSubitems('全部');
+      initializePositionComparisonForShop('全部');
+
+      // 侧栏切换功能
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('active');
+        });
+
+        // 点击侧栏外部关闭侧栏（移动端）
+        document.addEventListener('click', function(event) {
+          if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+          }
+        });
+
+        // 点击侧栏项目后关闭菜单
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+          });
+        });
+      }
+
+      // 高亮当前页面的导航项
+      const currentPath = window.location.href.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navbar-nav a, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+
+      console.log('初始化完成');
+    });
+
+    // ============ FOUR DIMENSIONS SUB-DIMENSIONS ============
+
+    // Initialize sub-dimensions for shops
+    function initializeDimensionSubitems(selectedDistrict = '全部', selectedShop = '全部营业店') {
+      // Employee Satisfaction Dimensions
+      const employeeDims = [
+        { id: '文化', label: '文化' },
+        { id: '管理', label: '管理' },
+        { id: '发展', label: '发展' },
+        { id: '敬业', label: '敬业' },
+        { id: '回报', label: '回报' },
+        { id: '效率', label: '效率' }
+      ];
+
+      renderDimensionCards('employeeDimensionsShop', employeeDims, selectedDistrict, selectedShop);
+
+      // Process Management Dimensions
+      const processDims = [
+        { id: '过程管理-管理', label: '管理' },
+        { id: '过程管理-效率', label: '效率' },
+        { id: '过程管理-发展', label: '发展' },
+        { id: '过程管理-回报', label: '回报' }
+      ];
+
+      renderDimensionCards('processDimensionsShop', processDims, selectedDistrict, selectedShop);
+
+      // Voice Management Dimensions
+      const voiceDims = [
+        { id: '处理时效', label: '处理时效' },
+        { id: '满意率', label: '满意度' }
+      ];
+
+      renderDimensionCards('voiceDimensionsShop', voiceDims, selectedDistrict, selectedShop);
+
+      // Fragment Survey Dimensions
+      const fragmentDims = [
+        { id: '廉洁调研', label: '廉洁调研' },
+        { id: '文化价值观（转换为百分制）', label: '文化价值观' }
+      ];
+
+      renderDimensionCards('fragmentDimensionsShop', fragmentDims, selectedDistrict, selectedShop);
+    }
+
+    // Render dimension cards
+    function renderDimensionCards(elementId, dimensions, selectedDistrict, selectedShop) {
+      const grid = document.getElementById(elementId);
+      if (!grid) return;
+
+      // Get data for selected district and shop
+      let selectedData = [];
+      if (selectedDistrict === '全部' && selectedShop === '全部营业店') {
+        selectedData = happiness.filter(item => item.数据维度值 === '-' && item.营业店 === '-');
+      } else if (selectedDistrict !== '全部' && selectedShop === '全部营业店') {
+        selectedData = happiness.filter(item => item.片区 === selectedDistrict && item.数据维度值 === '-' && item.营业店 === '-');
+      } else if (selectedDistrict === '全部' && selectedShop !== '全部营业店') {
+        selectedData = happiness.filter(item => item.营业店 === selectedShop && item.数据维度值 === '-');
+      } else {
+        selectedData = happiness.filter(item => item.片区 === selectedDistrict && item.营业店 === selectedShop && item.数据维度值 === '-');
+      }
+
+      // If no data, show empty state
+      if (selectedData.length === 0) {
+        grid.innerHTML = dimensions.map(dim => `
+          <div class="stat-card opacity-50">
+            <div class="text-2xl font-bold text-gray-400">—</div>
+            <div class="stat-label">${dim.label}</div>
+          </div>
+        `).join('');
+        return;
+      }
+
+      // Use first data item as representative
+      const data = selectedData[0];
+
+      grid.innerHTML = dimensions.map(dim => {
+        const value = data[dim.id];
+        if (value === '-' || value === undefined) {
+          return `
+            <div class="stat-card opacity-50">
+              <div class="text-2xl font-bold text-gray-400">—</div>
+              <div class="stat-label">${dim.label}</div>
+            </div>
+          `;
+        }
+
+        const numValue = parseFloat(value);
+        const color = numValue >= 90 ? 'from-green-400 to-emerald-500' :
+                      numValue >= 80 ? 'from-blue-400 to-cyan-500' :
+                      numValue >= 70 ? 'from-yellow-400 to-orange-500' :
+                      'from-orange-400 to-red-500';
+        return `
+          <div class="stat-card">
+            <div class="text-2xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent">${numValue.toFixed(1)}</div>
+            <div class="stat-label">${dim.label}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Show dimension tab
+    window.showShopDimensionTab = function(id, button) {
+      // Hide all dimension content
+      document.querySelectorAll('[id$="DimensionShop"]').forEach(el => {
+        el.classList.add('hidden');
+      });
+
+      // Show selected dimension content
+      const dimMap = {
+        'employee': 'employeeDimensionShop',
+        'process': 'processDimensionShop',
+        'voice': 'voiceDimensionShop',
+        'fragment': 'fragmentDimensionShop'
+      };
+
+      if (dimMap[id]) {
+        document.getElementById(dimMap[id]).classList.remove('hidden');
+      }
+
+      // Update button styles
+      document.querySelectorAll('[onclick^="showShopDimensionTab"]').forEach(btn => {
+        btn.classList.remove('dimension-tab-active', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-slate-100', 'text-slate-700');
+      });
+
+      button.classList.remove('bg-slate-100', 'text-slate-700');
+      button.classList.add('dimension-tab-active', 'text-white');
+    };
+
+    // ============ POSITION COMPARISON ANALYSIS ============
+
+    let positionRankChartShop, positionDistributionChartShop, satisfactionTrendChartShop;
+
+    // Initialize position comparison
+    function initializePositionComparisonForShop(selectedDistrict = '全部', selectedShop = '全部营业店') {
+      // Get position data
+      let positionData = [];
+
+      // Determine filter conditions
+      let filterConditions;
+      if (selectedDistrict === '全部' && selectedShop === '全部营业店') {
+        filterConditions = (item) => item.数据维度值 !== '-' && item.营业店 === '-';
+      } else if (selectedDistrict !== '全部' && selectedShop === '全部营业店') {
+        filterConditions = (item) => item.片区 === selectedDistrict && item.数据维度值 !== '-' && item.营业店 === '-';
+      } else if (selectedDistrict === '全部' && selectedShop !== '全部营业店') {
+        filterConditions = (item) => item.营业店 === selectedShop && item.数据维度值 !== '-';
+      } else {
+        filterConditions = (item) => item.片区 === selectedDistrict && item.营业店 === selectedShop && item.数据维度值 !== '-';
+      }
+
+      // Group position data and calculate averages
+      const positionGroups = {};
+      happiness.filter(filterConditions).forEach(item => {
+        const position = item.数据维度值;
+        if (!positionGroups[position]) {
+          positionGroups[position] = [];
+        }
+        positionGroups[position].push(item);
+      });
+
+      // Calculate average for each position
+      Object.entries(positionGroups).forEach(([position, items]) => {
+        const avgScore = items.reduce((sum, item) => sum + parseFloat(item['幸福指数综合得分']), 0) / items.length;
+        const avgEmployeeSatisfaction = items.reduce((sum, item) => sum + parseFloat(item['员满调研'] || 0), 0) / items.length;
+        const avgProcessManagement = items.reduce((sum, item) => sum + parseFloat(item['过程管理'] || 0), 0) / items.length;
+        const avgVoiceManagement = items.reduce((sum, item) => sum + parseFloat(item['声音管理'] || 0), 0) / items.length;
+        const avgFragmentSurvey = items.reduce((sum, item) => sum + parseFloat(item['碎片化调研'] || 0), 0) / items.length;
+
+        positionData.push({
+          '数据维度值': position,
+          '幸福指数综合得分': avgScore,
+          '员满调研': avgEmployeeSatisfaction,
+          '过程管理': avgProcessManagement,
+          '声音管理': avgVoiceManagement,
+          '碎片化调研': avgFragmentSurvey
+        });
+      });
+
+      // Sort by score
+      positionData.sort((a, b) => b['幸福指数综合得分'] - a['幸福指数综合得分']);
+
+      // Render all tabs
+      renderPositionRankingShop(positionData);
+      renderPositionDetailsShop(positionData);
+      renderPositionSatisfactionShop(positionData);
+      renderPositionProcessShop(positionData);
+      renderPositionCultureShop(positionData);
+      renderPositionChartsShop(positionData, selectedDistrict, selectedShop);
+    }
+
+    // Render ranking table
+    function renderPositionRankingShop(positionData) {
+      const tbody = document.getElementById('rankingTableShop');
+      if (!tbody || positionData.length === 0) return;
+
+      // 计算整体平均得分
+      const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+      const overallScore = overallData.length > 0 ? 
+        overallData.reduce((sum, d) => sum + parseFloat(d['幸福指数综合得分'] || 0), 0) / overallData.length : 0;
+
+      tbody.innerHTML = positionData.map((item, idx) => {
+        const score = item['幸福指数综合得分'];
+        const diff = score - overallScore;
+        const trend = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+        const trendColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-600';
+        return `
+          <tr>
+            <td><div class="rank-badge ${getRankBadgeClass(idx + 1)}">${idx + 1}</div></td>
+            <td class="font-semibold">${item['数据维度值']}</td>
+            <td class="font-bold text-blue-600">${score.toFixed(2)}</td>
+            <td class="${diff > 0 ? 'text-green-600 font-semibold' : diff < 0 ? 'text-red-600 font-semibold' : ''}">${diff > 0 ? '+' : ''}${diff.toFixed(2)}</td>
+            <td class="${trendColor} text-lg font-bold">${trend}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render detailed data
+    function renderPositionDetailsShop(positionData) {
+      const grid = document.getElementById('detailGridShop');
+      if (!grid || positionData.length === 0) return;
+
+      grid.innerHTML = positionData.map(item => {
+        const score = item['幸福指数综合得分'];
+        return `
+          <div class="glass-card rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-lg font-bold text-slate-900">${item['数据维度值']}</h4>
+              <div class="score-badge ${getScoreBadgeClass(score)}">
+                ${score.toFixed(1)}
+              </div>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">员工满意度:</span>
+                <span class="font-semibold text-blue-600">${item['员满调研'] !== '-' ? parseFloat(item['员满调研']).toFixed(2) : '—'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">过程管理:</span>
+                <span class="font-semibold">${item['过程管理'] !== '-' ? parseFloat(item['过程管理']).toFixed(2) : '—'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">声音管理:</span>
+                <span class="font-semibold">${item['声音管理'] !== '-' ? parseFloat(item['声音管理']).toFixed(2) : '—'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">碎片化调研:</span>
+                <span class="font-semibold">${item['碎片化调研'] !== '-' ? parseFloat(item['碎片化调研']).toFixed(2) : '—'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render satisfaction comparison
+    function renderPositionSatisfactionShop(positionData) {
+      const container = document.getElementById('satisfactionComparisonShop');
+      if (!container || positionData.length === 0) return;
+
+      container.innerHTML = positionData.map(item => {
+        const sat = parseFloat(item['员满调研']);
+        const width = (sat / 100) * 100;
+        return `
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+              <span class="text-lg font-bold text-blue-600">${sat.toFixed(2)}</span>
+            </div>
+            <div class="comparison-bar">
+              <div class="comparison-fill" style="width: ${width}%">${sat.toFixed(1)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render process management comparison
+    function renderPositionProcessShop(positionData) {
+      const container = document.getElementById('processComparisonShop');
+      if (!container || positionData.length === 0) return;
+
+      container.innerHTML = positionData
+        .filter(item => item['过程管理'] !== '-')
+        .map(item => {
+          const proc = parseFloat(item['过程管理']);
+          const width = (proc / 100) * 100;
+          return `
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+                <span class="text-lg font-bold text-blue-600">${proc.toFixed(2)}</span>
+              </div>
+              <div class="comparison-bar">
+                <div class="comparison-fill" style="width: ${width}%">${proc.toFixed(1)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+    }
+
+    // Render culture comparison
+    function renderPositionCultureShop(positionData) {
+      const container = document.getElementById('cultureGridShop');
+      if (!container || positionData.length === 0) return;
+
+      container.innerHTML = positionData
+        .filter(item => item['文化价值观（转换为百分制）'] !== '-')
+        .map(item => {
+          const culture = parseFloat(item['文化价值观（转换为百分制）']);
+          return `
+            <div class="glass-card rounded-xl p-6">
+              <h4 class="font-semibold text-slate-900 mb-3">${item['数据维度值']}</h4>
+              <div class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-violet-500 bg-clip-text text-transparent">${culture.toFixed(1)}</div>
+              <div class="mt-2 text-sm text-slate-600">文化价值观得分</div>
+            </div>
+          `;
+        }).join('');
+    }
+
+    // Render position charts
+    function renderPositionChartsShop(positionData, selectedDistrict, selectedShop = '全部营业店') {
+      renderPositionRankChartShop(positionData);
+      renderPositionDistributionChartShop(positionData);
+      renderSatisfactionTrendChartShop(selectedDistrict, selectedShop);
+    }
+
+    // Position Rank Chart
+    function renderPositionRankChartShop(positionData) {
+      const ctx = document.getElementById('positionRankChartShop');
+      if (!ctx || !positionData || positionData.length === 0) return;
+
+      const sorted = positionData.sort((a, b) => b['幸福指数综合得分'] - a['幸福指数综合得分']).slice(0, 10);
+      const labels = sorted.map(d => d['数据维度值']);
+      const data = sorted.map(d => d['幸福指数综合得分']);
+
+      // 计算整体平均分
+      const overallData = happiness.filter(d => d.数据维度值 === '-' && d.营业店 === '-');
+      const overallScore = overallData.length > 0 ?
+        overallData.reduce((sum, d) => sum + parseFloat(d['幸福指数综合得分'] || 0), 0) / overallData.length : 0;
+
+      // 更新最高分和最低分
+      if (data.length > 0) {
+        const maxScore = Math.max(...data);
+        const minScore = Math.min(...data);
+        const maxScoreEl = document.getElementById('chartMaxScoreShop');
+        const minScoreEl = document.getElementById('chartMinScoreShop');
+        if (maxScoreEl) maxScoreEl.textContent = maxScore.toFixed(2);
+        if (minScoreEl) minScoreEl.textContent = minScore.toFixed(2);
+      }
+
+      if (!positionRankChartShop) {
+        positionRankChartShop = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: '幸福指数',
+                data,
+                backgroundColor: data.map(score => {
+                  if (score >= 90) return '#10b981';
+                  if (score >= 80) return '#0ea5e9';
+                  if (score >= 70) return '#eab308';
+                  return '#ef4444';
+                }),
+                borderRadius: 6,
+                borderSkipped: false,
+                order: 1
+              },
+              {
+                label: '整体平均分',
+                data: Array(labels.length).fill(overallScore),
+                type: 'line',
+                borderColor: '#ef4444',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false,
+                tension: 0,
+                order: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  padding: 15
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    if (context.datasetIndex === 0) {
+                      return `幸福指数: ${context.raw.toFixed(2)}`;
+                    } else {
+                      return `整体平均: ${context.raw.toFixed(2)}`;
+                    }
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                title: {
+                  display: true,
+                  text: '幸福指数'
+                }
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 0
+                }
+              }
+            }
+          }
+        });
+      } else {
+        positionRankChartShop.data.labels = labels;
+        positionRankChartShop.data.datasets[0].data = data;
+        positionRankChartShop.data.datasets[0].backgroundColor = data.map(score => {
+          if (score >= 90) return '#10b981';
+          if (score >= 80) return '#0ea5e9';
+          if (score >= 70) return '#eab308';
+          return '#ef4444';
+        });
+        positionRankChartShop.data.datasets[1].data = Array(labels.length).fill(overallScore);
+        positionRankChartShop.update();
+      }
+    }
+
+    // Position Distribution Chart
+    function renderPositionDistributionChartShop(positionData) {
+      const ctx = document.getElementById('positionDistributionChartShop');
+      if (!ctx || !positionData || positionData.length === 0) return;
+
+      // 按得分排序并取前8个岗位
+      const sorted = positionData.sort((a, b) => b['幸福指数综合得分'] - a['幸福指数综合得分']).slice(0, 8);
+      const labels = sorted.map(d => d['数据维度值']);
+      const data = sorted.map(d => d['幸福指数综合得分']);
+
+      if (!positionDistributionChartShop) {
+        positionDistributionChartShop = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '岗位得分',
+              data: data,
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderColor: 'rgb(59, 130, 246)',
+              pointBackgroundColor: 'rgb(59, 130, 246)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgb(59, 130, 246)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                angleLines: {
+                  display: true
+                },
+                suggestedMin: 0,
+                suggestedMax: 100
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                borderRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const score = context.raw;
+                    return `得分: ${score.toFixed(1)}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        positionDistributionChartShop.data.labels = labels;
+        positionDistributionChartShop.data.datasets[0].data = data;
+        positionDistributionChartShop.update();
+      }
+    }
+
+    // 渲染员工满意度趋势图
+    function renderSatisfactionTrendChartShop(selectedDistrict = '全部', selectedShop = '全部营业店') {
+      console.log('renderSatisfactionTrendChartShop called with:', selectedDistrict, selectedShop);
+      console.log('typeble1 exists:', typeof typeble1 !== 'undefined');
+
+      if (typeof typeble1 === 'undefined' || !Array.isArray(typeble1)) {
+        console.error('typeble1 数据未加载');
+        return;
+      }
+
+      console.log('typeble1 data count:', typeble1.length);
+
+      // 过滤数据：先按片区，再按营业店
+      let filteredData = typeble1;
+
+      // 先过滤片区
+      if (selectedDistrict !== '全部') {
+        filteredData = filteredData.filter(item => item.type === selectedDistrict);
+      }
+
+      // 再过滤营业店
+      if (selectedShop !== '全部营业店') {
+        filteredData = filteredData.filter(item => item.type1 === selectedShop);
+      }
+
+      console.log('filtered data count:', filteredData.length);
+
+      // 按数据处理
+      let datasets = [];
+      let labels = ['24H2', '25Q2', '25Q3', '25Q4'];
+
+      if (selectedShop === '全部营业店') {
+        // 全部营业店：计算平均值
+        const avgData = {
+          '24H2': [],
+          '25Q2': [],
+          '25Q3': [],
+          '25Q4': []
+        };
+
+        filteredData.forEach(item => {
+          Object.keys(avgData).forEach(quarter => {
+            const val = item[quarter];
+            if (val !== '-' && val !== '' && val !== undefined && val !== null) {
+              avgData[quarter].push(parseFloat(val));
+            }
+          });
+        });
+
+        const finalAvgData = {};
+        Object.keys(avgData).forEach(quarter => {
+          if (avgData[quarter].length > 0) {
+            const sum = avgData[quarter].reduce((a, b) => a + b, 0);
+            finalAvgData[quarter] = (sum / avgData[quarter].length * 100).toFixed(2);
+          } else {
+            finalAvgData[quarter] = 0;
+          }
+        });
+
+        console.log('finalAvgData:', finalAvgData);
+
+        datasets.push({
+          label: '全部营业店平均值',
+          data: [finalAvgData['24H2'], finalAvgData['25Q2'], finalAvgData['25Q3'], finalAvgData['25Q4']],
+          borderColor: 'rgba(139, 92, 246, 1)',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 6,
+          pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        });
+      } else {
+        // 单个营业店：显示该营业店数据
+        if (filteredData.length > 0) {
+          const item = filteredData[0];
+          const data = [
+            (parseFloat(item['24H2']) * 100).toFixed(2),
+            (parseFloat(item['25Q2']) * 100).toFixed(2),
+            (parseFloat(item['25Q3']) * 100).toFixed(2),
+            (parseFloat(item['25Q4']) * 100).toFixed(2)
+          ];
+
+          console.log('single shop data:', data);
+
+          datasets.push({
+            label: item.type1,
+            data: data,
+            borderColor: 'rgba(14, 165, 233, 1)',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 6,
+            pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          });
+        }
+      }
+
+      // 获取canvas并初始化或更新图表
+      const ctx = document.getElementById('satisfactionTrendChartShop');
+      if (!ctx) {
+        console.error('satisfactionTrendChartShop canvas not found');
+        return;
+      }
+
+      // 销毁之前的图表实例
+      if (satisfactionTrendChartShop instanceof Chart) {
+        satisfactionTrendChartShop.destroy();
+      }
+
+      satisfactionTrendChartShop = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: '满意度得分（百分制）'
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 15,
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              borderRadius: 8,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+
+    // Show position tab
+    window.showPositionTabShop = function(id, button) {
+      // Hide all content
+      document.querySelectorAll('[id$="Shop"]').forEach(el => {
+        if (el.classList && el.classList.contains('tab-content')) {
+          el.classList.add('hidden');
+        }
+      });
+
+      // Show selected content
+      const contentId = id + 'Shop';
+      const content = document.getElementById(contentId);
+      if (content) {
+        content.classList.remove('hidden');
+      }
+
+      // Update button styles
+      document.querySelectorAll('[onclick^="showPositionTabShop"]').forEach(btn => {
+        btn.classList.remove('tab-btn-active', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-slate-100', 'text-slate-700', 'border', 'border-slate-300/50');
+      });
+
+      button.classList.remove('bg-slate-100', 'text-slate-700', 'border', 'border-slate-300/50');
+      button.classList.add('tab-btn-active', 'text-white');
+    };
+  </script>
+
+  <script src="utils.js"></script>
+  <script src="a11y-feedback.js"></script>
+</body>
+</html>

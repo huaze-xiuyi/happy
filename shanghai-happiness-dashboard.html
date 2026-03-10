@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>上海区幸福指数仪表板</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-manager.js"></script>
+  <style>
+    .score-badge {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      min-width: 100px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .score-excellent {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+
+    .score-good {
+      background: linear-gradient(135deg, #3b82f6 0%, #0284c7 100%);
+      color: white;
+    }
+
+    .score-medium {
+      background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%);
+      color: white;
+    }
+
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .tab-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      color: white;
+    }
+
+    .tab-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(248, 250, 252, 1);
+      border-color: rgba(14, 165, 233, 0.5);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ranking-table thead th {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(2, 132, 199, 0.1));
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #475569;
+      border-bottom: 2px solid rgba(14, 165, 233, 0.2);
+    }
+
+    .ranking-table tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .ranking-table tbody tr:hover {
+      background: rgba(14, 165, 233, 0.05);
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .rank-badge-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
+    .rank-badge-2 { background: linear-gradient(135deg, #c5cae9, #9fa8da); color: white; }
+    .rank-badge-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: white; }
+    .rank-badge-other { background: #e2e8f0; color: #64748b; }
+
+    .comparison-bar {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.1), rgba(14, 165, 233, 0.3));
+      border-radius: 0.5rem;
+      height: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comparison-fill {
+      background: linear-gradient(90deg, #0ea5e9, #0284c7);
+      height: 100%;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 0.5rem;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .dimension-tab {
+      background: rgba(248, 250, 252, 0.9);
+      color: #64748b;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      transition: all 0.3s ease;
+    }
+
+    .dimension-tab:hover {
+      border-color: rgba(14, 165, 233, 0.5);
+      background: rgba(248, 250, 252, 1);
+    }
+
+    .dimension-tab-active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      color: white;
+      box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
+      border-color: transparent;
+    }
+
+    .dimension-content {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .dimension-content.hidden {
+      display: none;
+    }
+
+    /* 图表容器优化 */
+    .chart-card {
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(240, 249, 255, 0.95));
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #0ea5e9, #0284c7, #06b6d4);
+    }
+
+    .chart-card:hover {
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .chart-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chart-title-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .chart-title-icon-blue {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.2));
+      color: #0284c7;
+    }
+
+    .chart-title-icon-green {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.2));
+      color: #15803d;
+    }
+
+    .chart-title-icon-purple {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(109, 40, 217, 0.2));
+      color: #6d28d9;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .chart-canvas-wrapper {
+      position: relative;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chart-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-stat-item {
+      text-align: center;
+    }
+
+    .chart-stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .chart-stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      font-weight: 500;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(226, 232, 240, 0.5);
+    }
+
+    .chart-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .chart-legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-slate-50 min-h-screen text-slate-900">
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <button id="sidebarToggle" class="sidebar-toggle hidden-desktop">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6h18M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="navbar-brand">
+      <img src="logo.png" alt="幸福生态平台" class="navbar-logo">
+      幸福生态平台
+    </div>
+    <nav class="navbar-nav">
+      <a href="index.html">首页</a>
+      <a href="happiness.html">评分逻辑</a>
+      <a href="shanghai-happiness-dashboard.html" class="active">上海区分析</a>
+      <a href="happiness-dashboard-new.html">片区分析</a>
+      <a href="happiness-shop-dashboard.html">营业店分析</a>
+      <button class="theme-toggle" aria-label="切换主题">🌙</button>
+    </nav>
+  </nav>
+
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <ul class="sidebar-menu">
+      <li class="sidebar-menu-item">
+        <a href="index.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          首页
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+          评分逻辑
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="shanghai-happiness-dashboard.html" class="active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"></path>
+            <path d="M7 8h10M7 13h5M7 18h3"></path>
+          </svg>
+          上海区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-dashboard-new.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          片区分析
+        </a>
+      </li>
+      <li class="sidebar-menu-item">
+        <a href="happiness-shop-dashboard.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6-7 6 7M9 5v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V5M9 9h6M9 13h6"></path>
+          </svg>
+          营业店分析
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 背景装饰 -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 -left-4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- 主容器 -->
+  <div class="main-wrapper">
+    <div class="container relative z-10">
+    <!-- 页眉 -->
+    <div class="mb-12">
+      <div class="glass-effect rounded-2xl p-8 sm:p-12 border-t-2 border-blue-300">
+        <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          上海区幸福指数仪表板
+        </h1>
+        <p class="text-slate-600 text-lg font-light">速运上海区  - 整体与重要岗位对比分析</p>
+        <div class="mt-4 flex gap-2">
+          <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+          <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 整体数据展示 -->
+    <div class="mb-12">
+      <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+        <span class="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+        上海区整体指标
+      </h2>
+
+      <!-- 主幸福指数卡片 -->
+      <div class="glass-effect rounded-2xl p-8 sm:p-10 mb-8 card-hover border-t-2 border-blue-300">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-700 mb-2">幸福指数综合得分</h3>
+            <div class="flex items-end gap-6">
+              <div class="score-badge score-good" id="overallScore">89.16</div>
+              <div>
+                <p class="text-4xl font-bold text-blue-600">89.16</p>
+                <p class="text-sm text-slate-600 mt-2">评级：<span class="font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded">A 良好</span></p>
+                <p class="text-xs text-slate-500 mt-1">范围：80-90分</p>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="stat-card">
+              <div class="stat-value" id="employeeSatisfaction">87.67</div>
+              <div class="stat-label">员工满意度<br>调研</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="processManagement">83.81</div>
+              <div class="stat-label">过程管理</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="voiceManagement">95.98</div>
+              <div class="stat-label">声音管理</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="fragmentSurvey">89.25</div>
+              <div class="stat-label">碎片化调研</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 四维度子维度详情 -->
+      <div class="glass-effect rounded-2xl p-8 sm:p-10 card-hover">
+        <h4 class="text-lg font-semibold text-slate-900 mb-6">四维度子维度详情</h4>
+
+        <!-- 维度选择标签 -->
+        <div class="flex flex-wrap gap-2 sm:gap-3 mb-8 pb-6 border-b border-slate-200">
+          <button
+            onclick="showDimensionTab('employee', this)"
+            class="dimension-tab dimension-tab-active py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300"
+            aria-label="员工满意度调研"
+          >
+            👥 员工满意度<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('process', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="过程管理"
+          >
+            📊 过程管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('voice', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="声音管理"
+          >
+            🎤 声音管理<span class="text-xs ml-1">(权重30%)</span>
+          </button>
+          <button
+            onclick="showDimensionTab('fragment', this)"
+            class="dimension-tab py-2 px-4 rounded-lg text-sm font-600 cursor-pointer transition-all duration-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            aria-label="碎片化调研"
+          >
+            🔍 碎片化调研<span class="text-xs ml-1">(权重10%)</span>
+          </button>
+        </div>
+
+        <!-- 员工满意度调研子维度 -->
+        <div id="employeeDimension" class="dimension-content">
+          <div class="dimension-grid" id="employeeDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 过程管理子维度 -->
+        <div id="processDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="processDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 声音管理子维度 -->
+        <div id="voiceDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="voiceDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 碎片化调研子维度 -->
+        <div id="fragmentDimension" class="dimension-content hidden">
+          <div class="dimension-grid" id="fragmentDimensions">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 标签导航 -->
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+        <span class="w-1 h-8 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full"></span>
+        重要岗位对比分析
+      </h2>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+        <button
+          onclick="showPositionTab('ranking', this)"
+          class="tab-btn tab-btn-active py-3 px-3 rounded-xl text-white text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 hover:shadow-lg active:scale-95"
+          aria-label="排名对比"
+        >
+          📊 排名对比
+        </button>
+        <button
+          onclick="showPositionTab('detail', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="详细数据"
+        >
+          📈 详细数据
+        </button>
+        <button
+          onclick="showPositionTab('satisfaction', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="满意度对比"
+        >
+          ⭐ 满意度
+        </button>
+        <button
+          onclick="showPositionTab('process', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="过程管理"
+        >
+          🎯 过程管理
+        </button>
+        <button
+          onclick="showPositionTab('culture', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="文化传播"
+        >
+          🎨 文化传播
+        </button>
+        <button
+          onclick="showPositionTab('chart', this)"
+          class="tab-btn py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-600 cursor-pointer transition-all duration-300 border border-slate-300/50"
+          aria-label="图表分析"
+        >
+          📉 图表分析
+        </button>
+      </div>
+    </div>
+
+    <!-- 岗位对比内容 -->
+    <div class="glass-effect rounded-2xl p-6 sm:p-8">
+      <!-- 排名对比 -->
+      <div id="ranking" class="tab-content">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">岗位综合得分排名</h3>
+        <div class="overflow-x-auto">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>岗位</th>
+                <th>综合得分</th>
+                <th>相对整体</th>
+                <th>趋势</th>
+              </tr>
+            </thead>
+            <tbody id="rankingTable">
+              <!-- 动态生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 详细数据 -->
+      <div id="detail" class="tab-content hidden">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">各岗位详细指标</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="detailGrid">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+
+      <!-- 满意度对比 -->
+      <div id="satisfaction" class="tab-content hidden">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">员工满意度调研得分对比</h3>
+        <div class="space-y-4">
+          <div id="satisfactionComparison">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 过程管理 -->
+      <div id="process" class="tab-content hidden">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">过程管理得分对比</h3>
+        <div class="space-y-4">
+          <div id="processComparison">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 文化传播 -->
+      <div id="culture" class="tab-content hidden">
+        <h3 class="text-xl font-bold text-slate-900 mb-6">文化价值观传播对比</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div id="cultureGrid">
+            <!-- 动态生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 图表分析 -->
+      <div id="chart" class="tab-content hidden">
+        <h3 class="text-xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+          <span class="text-2xl">📊</span> 多维度对比分析
+        </h3>
+
+        <div class="charts-grid">
+          <!-- 各岗位综合得分 -->
+          <div class="chart-card">
+            <div class="chart-title">
+              <div class="chart-title-icon chart-title-icon-blue">📊</div>
+              <span>各岗位综合得分</span>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="overallChart"></canvas>
+            </div>
+            <div class="chart-stats">
+              <div class="chart-stat-item">
+                <div class="chart-stat-value" id="chartMaxScore">95.82</div>
+                <div class="chart-stat-label">最高分</div>
+              </div>
+              <div class="chart-stat-item">
+                <div class="chart-stat-value" id="chartMinScore">80.67</div>
+                <div class="chart-stat-label">最低分</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 四维度得分分布 -->
+          <div class="chart-card">
+            <div class="chart-title">
+              <div class="chart-title-icon chart-title-icon-green">🎯</div>
+              <span>四维度得分分布</span>
+            </div>
+            <div class="chart-canvas-wrapper">
+              <canvas id="dimensionChart"></canvas>
+            </div>
+            <div class="chart-legend">
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(14, 165, 233, 1);"></div>
+                员工满意度
+              </div>
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(249, 115, 22, 1);"></div>
+                过程管理
+              </div>
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(34, 197, 94, 1);"></div>
+                声音管理
+              </div>
+            </div>
+          </div>
+
+          <!-- 员工满意度子维度对比 -->
+          <div class="chart-card lg:col-span-2">
+            <div class="chart-title">
+              <div class="chart-title-icon chart-title-icon-purple">📈</div>
+              <span>员工满意度 - 子维度趋势对比（Top3岗位）</span>
+            </div>
+            <div class="chart-canvas-wrapper" style="min-height: 350px;">
+              <canvas id="subdimensionChart"></canvas>
+            </div>
+            <div class="chart-legend" style="grid-column: 1 / -1;">
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(14, 165, 233, 1);"></div>
+                整体数据
+              </div>
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(34, 197, 94, 0.8);"></div>
+                经营三线 (95.82分)
+              </div>
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(59, 130, 246, 0.8);"></div>
+                网点经营管理队伍 (94.94分)
+              </div>
+              <div class="chart-legend-item">
+                <div class="chart-legend-color" style="background: rgba(251, 191, 36, 0.8);"></div>
+                网点运营队伍 (93.91分)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表说明 -->
+        <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 class="font-semibold text-blue-900 mb-3">📋 图表分析说明</h4>
+          <ul class="space-y-2 text-sm text-blue-800">
+            <li class="flex gap-2">
+              <span>•</span>
+              <span><strong>综合得分柱状图：</strong>展示各岗位总体幸福指数，直观对比岗位表现差异</span>
+            </li>
+            <li class="flex gap-2">
+              <span>•</span>
+              <span><strong>四维度雷达图：</strong>四个核心维度呈放射性展示，便于识别整体数据的强弱项</span>
+            </li>
+            <li class="flex gap-2">
+              <span>•</span>
+              <span><strong>子维度折线图：</strong>对比表现最好的3个岗位与整体的细微差异，发现管理优势</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关键洞察 -->
+    <div class="mt-12 mb-8">
+      <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+        <span class="w-1 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></span>
+        关键洞察与建议
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-effect rounded-2xl p-6 border-l-4 border-green-500 card-hover">
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✓ 优势领域</h3>
+          <ul class="space-y-2 text-sm text-slate-700">
+            <li class="flex gap-2">
+              <span class="text-green-600 font-bold">•</span>
+              <span><strong>声音管理优异：</strong>95.98分，远高于整体基准</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-green-600 font-bold">•</span>
+              <span><strong>碎片化调研良好：</strong>89.25分，反映文化价值观传播有效</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-green-600 font-bold">•</span>
+              <span><strong>管理层岗位表现突出：</strong>网点经营管理队伍达94.94分</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="glass-effect rounded-2xl p-6 border-l-4 border-orange-500 card-hover">
+          <h3 class="text-lg font-semibold text-orange-700 mb-3">⚠ 改进空间</h3>
+          <ul class="space-y-2 text-sm text-slate-700">
+            <li class="flex gap-2">
+              <span class="text-orange-600 font-bold">•</span>
+              <span><strong>过程管理相对薄弱：</strong>83.81分，需加强人才流失管理</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-orange-600 font-bold">•</span>
+              <span><strong>基层岗位差异大：</strong>大件收派80.67分，与整体存在9.49分差距</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-orange-600 font-bold">•</span>
+              <span><strong>仓管岗位关注：</strong>82.58分，需重点改善发展机会</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./happy.js"></script>
+  <script>
+    // 分离整体数据和岗位数据
+    const overallData = window.happy.find(item => item['数据维度值'] === '-');
+    const positionData = window.happy.filter(item => item['数据维度值'] !== '-');
+
+    // 初始化整体数据显示
+    function initializeOverallData() {
+      if (!overallData) return;
+
+      const mapping = {
+        'overallScore': '幸福指数综合得分',
+        'employeeSatisfaction': '员满调研',
+        'processManagement': '过程管理',
+        'voiceManagement': '声音管理',
+        'fragmentSurvey': '碎片化调研'
+      };
+
+      Object.entries(mapping).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = parseFloat(overallData[key]).toFixed(2);
+        }
+      });
+
+      // 初始化所有维度的子维度
+      initializeDimensionSubitems();
+    }
+
+    // 初始化四维度的子维度
+    function initializeDimensionSubitems() {
+      if (!overallData) return;
+
+      // 员工满意度子维度
+      const employeeDims = [
+        { id: '文化', label: '文化' },
+        { id: '管理', label: '管理' },
+        { id: '发展', label: '发展' },
+        { id: '敬业', label: '敬业' },
+        { id: '回报', label: '回报' },
+        { id: '效率', label: '效率' }
+      ];
+
+      renderDimensionCards('employeeDimensions', employeeDims);
+
+      // 过程管理子维度
+      const processDims = [
+        { id: '过程管理-管理', label: '管理' },
+        { id: '过程管理-效率', label: '效率' },
+        { id: '过程管理-发展', label: '发展' },
+        { id: '过程管理-回报', label: '回报' }
+      ];
+
+      renderDimensionCards('processDimensions', processDims);
+
+      // 声音管理子维度
+      const voiceDims = [
+        { id: '处理时效', label: '处理时效' },
+        { id: '满意率', label: '满意度' }
+      ];
+
+      renderDimensionCards('voiceDimensions', voiceDims);
+
+      // 碎片化调研子维度
+      const fragmentDims = [
+        { id: '廉洁调研', label: '廉洁调研' },
+        { id: '文化价值观（转换为百分制）', label: '文化价值观' }
+      ];
+
+      renderDimensionCards('fragmentDimensions', fragmentDims);
+    }
+
+    // 渲染维度卡片
+    function renderDimensionCards(elementId, dimensions) {
+      const grid = document.getElementById(elementId);
+      if (!grid) return;
+
+      grid.innerHTML = dimensions.map(dim => {
+        const value = overallData[dim.id];
+        if (value === '-' || value === undefined) {
+          return `
+            <div class="stat-card opacity-50">
+              <div class="text-2xl font-bold text-gray-400">—</div>
+              <div class="stat-label">${dim.label}</div>
+            </div>
+          `;
+        }
+
+        const numValue = parseFloat(value);
+        const color = numValue >= 90 ? 'from-green-400 to-emerald-500' :
+                      numValue >= 80 ? 'from-blue-400 to-cyan-500' :
+                      numValue >= 70 ? 'from-yellow-400 to-orange-500' :
+                      'from-orange-400 to-red-500';
+        return `
+          <div class="stat-card">
+            <div class="text-2xl font-bold bg-gradient-to-r ${color} bg-clip-text text-transparent">${numValue.toFixed(1)}</div>
+            <div class="stat-label">${dim.label}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 维度标签切换
+    window.showDimensionTab = function(id, button) {
+      // 隐藏所有维度内容
+      document.querySelectorAll('.dimension-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+
+      // 显示选中的维度内容
+      const dimMap = {
+        'employee': 'employeeDimension',
+        'process': 'processDimension',
+        'voice': 'voiceDimension',
+        'fragment': 'fragmentDimension'
+      };
+
+      if (dimMap[id]) {
+        document.getElementById(dimMap[id]).classList.remove('hidden');
+      }
+
+      // 更新按钮样式
+      document.querySelectorAll('.dimension-tab').forEach(btn => {
+        btn.classList.remove('dimension-tab-active', 'text-white', 'shadow-lg');
+        btn.classList.add('bg-slate-100', 'text-slate-700');
+      });
+
+      button.classList.remove('bg-slate-100', 'text-slate-700');
+      button.classList.add('dimension-tab-active', 'text-white');
+    };
+
+    // 初始化岗位对比
+    function initializePositionComparison() {
+      // 排名对比
+      const sorted = [...positionData].sort((a, b) =>
+        parseFloat(b['幸福指数综合得分']) - parseFloat(a['幸福指数综合得分'])
+      );
+
+      const rankingTable = document.getElementById('rankingTable');
+      rankingTable.innerHTML = sorted.map((item, index) => {
+        const score = parseFloat(item['幸福指数综合得分']);
+        const overallScore = parseFloat(overallData['幸福指数综合得分']);
+        const diff = score - overallScore;
+        const rankClass = `rank-badge-${index + 1 <= 3 ? index + 1 : 'other'}`;
+        const trend = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+        const trendColor = diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-600';
+
+        return `
+          <tr>
+            <td><div class="rank-badge ${rankClass}">${index + 1}</div></td>
+            <td class="font-semibold">${item['数据维度值']}</td>
+            <td class="font-bold text-blue-600">${score.toFixed(2)}</td>
+            <td class="${diff > 0 ? 'text-green-600 font-semibold' : diff < 0 ? 'text-red-600 font-semibold' : ''}">${diff > 0 ? '+' : ''}${diff.toFixed(2)}</td>
+            <td class="${trendColor} text-lg font-bold">${trend}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // 详细数据卡片
+      const detailGrid = document.getElementById('detailGrid');
+      detailGrid.innerHTML = positionData.map(item => {
+        const score = parseFloat(item['幸福指数综合得分']);
+        const color = score >= 90 ? 'from-green-500 to-emerald-600' :
+                      score >= 80 ? 'from-blue-500 to-cyan-600' :
+                      'from-orange-500 to-red-600';
+
+        return `
+          <div class="glass-light rounded-xl p-6 card-hover">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-lg font-bold text-slate-900">${item['数据维度值']}</h4>
+              <div class="score-badge" style="background: linear-gradient(135deg, var(--color-start), var(--color-end));" data-color="${color}">
+                ${score.toFixed(1)}
+              </div>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">员工满意度:</span>
+                <span class="font-semibold text-blue-600">${parseFloat(item['员满调研']).toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">过程管理:</span>
+                <span class="font-semibold">${item['过程管理'] !== '-' ? parseFloat(item['过程管理']).toFixed(2) : '—'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">声音管理:</span>
+                <span class="font-semibold">${item['声音管理'] !== '-' ? parseFloat(item['声音管理']).toFixed(2) : '—'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">碎片化调研:</span>
+                <span class="font-semibold">${item['碎片化调研'] !== '-' ? parseFloat(item['碎片化调研']).toFixed(2) : '—'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 满意度对比
+      const satisfactionComp = document.getElementById('satisfactionComparison');
+      const overallSat = parseFloat(overallData['员满调研']);
+      satisfactionComp.innerHTML = positionData.map(item => {
+        const sat = parseFloat(item['员满调研']);
+        const width = (sat / 100) * 100;
+        return `
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+              <span class="text-lg font-bold text-blue-600">${sat.toFixed(2)}</span>
+            </div>
+            <div class="comparison-bar">
+              <div class="comparison-fill" style="width: ${width}%">${sat.toFixed(1)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 过程管理对比
+      const processComp = document.getElementById('processComparison');
+      const overallProcess = parseFloat(overallData['过程管理']);
+      processComp.innerHTML = positionData
+        .filter(item => item['过程管理'] !== '-')
+        .map(item => {
+          const proc = parseFloat(item['过程管理']);
+          const width = (proc / 100) * 100;
+          return `
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-slate-700">${item['数据维度值']}</span>
+                <span class="text-lg font-bold text-blue-600">${proc.toFixed(2)}</span>
+              </div>
+              <div class="comparison-bar">
+                <div class="comparison-fill" style="width: ${width}%">${proc.toFixed(1)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      // 文化价值观对比
+      const cultureGrid = document.getElementById('cultureGrid');
+      cultureGrid.innerHTML = positionData
+        .filter(item => item['文化价值观（转换为百分制）'] !== '-')
+        .map(item => {
+          const culture = parseFloat(item['文化价值观（转换为百分制）']);
+          return `
+            <div class="glass-light rounded-xl p-6">
+              <h4 class="font-semibold text-slate-900 mb-3">${item['数据维度值']}</h4>
+              <div class="text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 bg-clip-text text-transparent mb-2">
+                ${culture.toFixed(2)}
+              </div>
+              <p class="text-xs text-slate-600">文化价值观传播得分</p>
+            </div>
+          `;
+        }).join('');
+    }
+
+    // 初始化图表
+    function initializeCharts() {
+      // 计算并显示图表统计数据
+      const scores = positionData.map(item => parseFloat(item['幸福指数综合得分']));
+      const maxScore = Math.max(...scores);
+      const minScore = Math.min(...scores);
+
+      document.getElementById('chartMaxScore').textContent = maxScore.toFixed(2);
+      document.getElementById('chartMinScore').textContent = minScore.toFixed(2);
+      // 综合得分柱状图
+      const overallCtx = document.getElementById('overallChart');
+      if (overallCtx) {
+        const overallScore = parseFloat(overallData['幸福指数综合得分']);
+
+        // 自定义插件：绘制平均线
+        const averageLinePlugin = {
+          id: 'averageLine',
+          afterDatasetsDraw(chart) {
+            const yScale = chart.scales.y;
+            const xScale = chart.scales.x;
+            const canvas = chart.ctx;
+
+            // 计算平均线的像素位置
+            const yPixel = yScale.getPixelForValue(overallScore);
+
+            // 绘制线
+            canvas.save();
+            canvas.strokeStyle = 'rgba(14, 165, 233, 0.8)';
+            canvas.lineWidth = 2;
+            canvas.setLineDash([5, 5]);
+            canvas.beginPath();
+            canvas.moveTo(xScale.left, yPixel);
+            canvas.lineTo(xScale.right, yPixel);
+            canvas.stroke();
+
+            // 绘制标签
+            canvas.fillStyle = 'rgba(14, 165, 233, 1)';
+            canvas.font = 'bold 12px system-ui';
+            canvas.fillText(`整体平均: ${overallScore.toFixed(2)}`, xScale.left + 10, yPixel - 8);
+
+            canvas.restore();
+          }
+        };
+
+        new Chart(overallCtx, {
+          type: 'bar',
+          data: {
+            labels: positionData.map(item => item['数据维度值']),
+            datasets: [{
+              label: '综合得分',
+              data: positionData.map(item => parseFloat(item['幸福指数综合得分'])),
+              backgroundColor: [
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(251, 191, 36, 0.8)',
+                'rgba(14, 165, 233, 0.8)',
+                'rgba(168, 85, 247, 0.8)',
+                'rgba(236, 72, 153, 0.8)'
+              ],
+              borderColor: [
+                'rgba(34, 197, 94, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(251, 191, 36, 1)',
+                'rgba(14, 165, 233, 1)',
+                'rgba(168, 85, 247, 1)',
+                'rgba(236, 72, 153, 1)'
+              ],
+              borderRadius: 8,
+              borderWidth: 2,
+              hoverBackgroundColor: 'rgba(14, 165, 233, 1)',
+              hoverBorderWidth: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: 12,
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                borderColor: 'rgba(14, 165, 233, 0.5)',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { color: '#64748b', font: { size: 11 } },
+                grid: { color: 'rgba(226, 232, 240, 0.3)' }
+              },
+              x: {
+                ticks: { color: '#64748b', font: { size: 11 } },
+                grid: { display: false }
+              }
+            }
+          },
+          plugins: [averageLinePlugin]
+        });
+      }
+
+      // 四维度雷达图
+      const dimensionCtx = document.getElementById('dimensionChart');
+      if (dimensionCtx) {
+        const dimensions = ['员满调研', '过程管理', '声音管理', '碎片化调研'];
+        new Chart(dimensionCtx, {
+          type: 'radar',
+          data: {
+            labels: dimensions,
+            datasets: [{
+              label: '整体',
+              data: dimensions.map(d => parseFloat(overallData[d] || 0)),
+              borderColor: 'rgba(14, 165, 233, 1)',
+              backgroundColor: 'rgba(14, 165, 233, 0.15)',
+              borderWidth: 2.5,
+              pointRadius: 6,
+              pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointHoverRadius: 8,
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#64748b',
+                  font: { size: 12, weight: 'bold' },
+                  padding: 15,
+                  usePointStyle: true
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                padding: 12,
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                borderColor: 'rgba(14, 165, 233, 0.5)',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  color: '#64748b',
+                  font: { size: 10 },
+                  stepSize: 20
+                },
+                grid: {
+                  color: 'rgba(226, 232, 240, 0.5)'
+                },
+                pointLabels: {
+                  color: '#1e293b',
+                  font: { size: 12, weight: '600' }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 子维度对比
+      const subdimensionCtx = document.getElementById('subdimensionChart');
+      if (subdimensionCtx) {
+        const subDims = ['文化', '管理', '发展', '敬业', '回报', '效率'];
+        const datasets = [
+          {
+            label: '整体',
+            data: subDims.map(d => parseFloat(overallData[d] || 0)),
+            borderColor: 'rgba(14, 165, 233, 1)',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 2.5,
+            pointRadius: 5,
+            pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            tension: 0.4,
+            fill: false
+          }
+        ];
+
+        // 添加前3名岗位
+        const sorted = [...positionData].sort((a, b) =>
+          parseFloat(b['幸福指数综合得分']) - parseFloat(a['幸福指数综合得分'])
+        );
+
+        const colors = [
+          { border: 'rgba(34, 197, 94, 1)', bg: 'rgba(34, 197, 94, 0.1)' },
+          { border: 'rgba(59, 130, 246, 1)', bg: 'rgba(59, 130, 246, 0.1)' },
+          { border: 'rgba(251, 191, 36, 1)', bg: 'rgba(251, 191, 36, 0.1)' }
+        ];
+
+        sorted.slice(0, 3).forEach((item, idx) => {
+          datasets.push({
+            label: item['数据维度值'],
+            data: subDims.map(d => parseFloat(item[d] || 0)),
+            borderColor: colors[idx].border,
+            backgroundColor: colors[idx].bg,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: colors[idx].border,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            tension: 0.4,
+            fill: false
+          });
+        });
+
+        new Chart(subdimensionCtx, {
+          type: 'line',
+          data: {
+            labels: subDims,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#64748b',
+                  font: { size: 12, weight: '600' },
+                  padding: 15,
+                  usePointStyle: true
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                padding: 12,
+                titleFont: { size: 13, weight: 'bold' },
+                bodyFont: { size: 12 },
+                borderColor: 'rgba(14, 165, 233, 0.5)',
+                borderWidth: 1,
+                displayColors: true,
+                padding: 15
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { color: '#64748b', font: { size: 11 }, stepSize: 10 },
+                grid: { color: 'rgba(226, 232, 240, 0.3)' }
+              },
+              x: {
+                ticks: { color: '#64748b', font: { size: 11 } },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // 标签切换
+    window.showPositionTab = function(id, button) {
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+      document.getElementById(id).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('tab-btn-active', 'text-white');
+        btn.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+      });
+
+      button.classList.remove('bg-slate-100', 'hover:bg-slate-200', 'text-slate-700', 'border', 'border-slate-300/50');
+      button.classList.add('tab-btn-active', 'text-white');
+
+      // 图表重绘
+      if (id === 'chart') {
+        setTimeout(initializeCharts, 100);
+      }
+    };
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeOverallData();
+      initializePositionComparison();
+      initializeCharts();
+
+      // 侧栏切换功能
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('active');
+        });
+
+        // 点击侧栏外部关闭侧栏（移动端）
+        document.addEventListener('click', function(event) {
+          if (!sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('active');
+          }
+        });
+
+        // 点击侧栏项目后关闭菜单
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+          });
+        });
+      }
+
+      // 高亮当前页面的导航项
+      const currentPath = window.location.href.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navbar-nav a, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === currentPath || (currentPath === '' && href === 'index.html')) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    });
+  </script>
+
+  <script src="utils.js"></script>
+  <script src="a11y-feedback.js"></script>
+</body>
+</html>
